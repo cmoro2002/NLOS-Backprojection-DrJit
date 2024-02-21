@@ -1,0 +1,2 @@
+Para activar el env:
+    source proj_env/bin/activate
