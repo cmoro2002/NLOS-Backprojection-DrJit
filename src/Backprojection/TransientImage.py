@@ -1,22 +1,24 @@
-from typing import List
-from mathutils import Vector
+import numpy as np
 
 class TransientImage:
-    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: List[List[List[float]]], max_value: float, min_value: float):
+    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: np.ndarray, max_value: float, min_value: float):
         self.width = width
         self.height = height
         self.channels = channels
         self.time_per_coord = time_per_coord
         self.intensity_multiplier_unit = intensity_multiplier_unit
-        self.data = data if data is not None else [[[0.0] * channels for _ in range(height)] for _ in range(width)]
+        if data is not None:
+            self.data = np.array(data)
+        else:
+            self.data = np.zeros((width, height, channels))
         self.max_value = max_value
         self.min_value = min_value
         self.laser_hit_time = 0
-        self.wall_camera_dilation = [0.0] * height
-        self.point_wall_i = Vector((0, 0, 0))
-        self.wall_direction = Vector((0, 0, 0))
-        self.wall_normal = Vector((0, 0, 0))
-        self.laser = Vector((0, 0, 0))
+        self.wall_camera_dilation = np.zeros(height)
+        self.point_wall_i = np.array([0, 0, 0])
+        self.wall_direction = np.array([0, 0, 0])
+        self.wall_normal = np.array([0, 0, 0])
+        self.laser = np.array([0, 0, 0])
         self.wall_view_width = height
         self.px_half_width = 0.5
         
