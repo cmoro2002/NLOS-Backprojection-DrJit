@@ -7,17 +7,47 @@ import numpy as np
 # Imports de mis clases
 from TransientImage import TransientImage
 from TransientVoxelization import initTransientImage
+from BoxBounds import BoxBounds
 
-def backprojection(transient_images: list):
+def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images: list):
+    voxel = np.array([fx, fy, fz])
+    intensities = 0.0
 
-    z = len(transient_images)
+    for transient_image in transient_images:
+        for h in range(transient_image.height):
+            # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
+            wall_point = transient_image.getPointForCoord(h)
 
-    # TODO: VOXEL_RESOLUTION sería un parametro
-    VOXEL_RESOLUTION = 100
+            # Calcular el tiempo
+            time = (np.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
+                    np.sqrt(np.sum(np.square(voxel - wall_point))))
 
-    # Para cada x e y de cada imagen 
-    for i in range(VOXEL_RESOLUTION):
-        for j in range(VOXEL_RESOLUTION):
+            # Sumar la intensidad correspondiente al tiempo
+            intensities += transient_image.getIntensityForTime(h, time)
+
+    return intensities
+
+
+def backprojection(transient_images: list, bounds: BoxBounds):
+
+    num_images = len(transient_images)
+    resolution = bounds.resolution
+
+    results = np.zeros((resolution, resolution, resolution))
+
+    for z in range(num_images):
+        # Para cada x e y de cada imagen 
+        for y in range(resolution):
+            for x in range(resolution):
+
+                fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
+                fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
+                fz = bounds.zi + ((z + 0.5) / resolution) * bounds.sz
+
+                # Almacenar la suma de los resultados
+                results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
+                 
+
 
 
 # Recorrer la lista de imagenes de la carpeta y crear una instancia de TransientImage por cada imagen
@@ -55,14 +85,17 @@ def initTransientImages( folder_name: str):
 
 
 def main():
-    # Aquí colocas el código principal de tu programa
-    print("¡Hola mundo!")
 
+    # Configuración de la variable de entorno para seleccionar la GPU a utilizar
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
     # Configuración de los argumentos de línea de comandos
     parser = argparse.ArgumentParser(description="Descripción de tu programa")
     parser.add_argument("-folder", dest="folder_name", type=str, help="Nombre de la carpeta")
+    parser.add_argument("-voxel_resolution", dest="voxel_resolution", type=int, help="Resolución del voxel")
+    parser.add_argument("-max_ortho_size", dest="max_ortho_size", type=int, help="Tamaño máximo del ORTHO")
+
+
 
     # Parsear los argumentos de línea de comandos
     args = parser.parse_args()
@@ -71,13 +104,19 @@ def main():
     folder_name = args.folder_name
     print(f"reading files from: {folder_name}")
 
+    resolucion = args.voxel_resolution
+    max_ortho_size = args.max_ortho_size
+
     # Crear una instancia de TransientImage
     # transient_image = TransientImage(10, 10, 3, 0.1, 0.1, None, 1.0, 0.0)
     transient_images = initTransientImages(folder_name)
 
     print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
-    backprojection(transient_images)
+    #TODO: Parametros ORTHO_OFFSET x y z
+    bounds = BoxBounds(0, 0, 0, max_ortho_size, resolucion)
+
+    backprojection(transient_images, bounds)
 
 
 
