@@ -3,14 +3,18 @@ import time
 import argparse
 import os
 import numpy as np
+import drjit as dr
+
+# Imports de drjit
+from drjit.cuda import Float, Int
 
 # Imports de mis clases
 from TransientImage import TransientImage
 from TransientVoxelization import initTransientImage
 from BoxBounds import BoxBounds
 
-def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images: list):
-    voxel = np.array([fx, fy, fz])
+def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: list):
+    voxel = Float([fx, fy, fz])
     intensities = 0.0
 
     for transient_image in transient_images:
@@ -19,8 +23,8 @@ def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images
             wall_point = transient_image.getPointForCoord(h)
 
             # Calcular el tiempo
-            time = (np.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
-                    np.sqrt(np.sum(np.square(voxel - wall_point))))
+            time = (dr.sqrt(dr.sum(dr.square(transient_image.getLaser() - voxel))) +
+                    dr.sqrt(dr.sum(dr.square(voxel - wall_point))))
 
             # Sumar la intensidad correspondiente al tiempo
             intensities += transient_image.getIntensityForTime(h, time)
@@ -33,7 +37,7 @@ def backprojection(transient_images: list, bounds: BoxBounds):
     num_images = len(transient_images)
     resolution = bounds.resolution
 
-    results = np.zeros((resolution, resolution, resolution))
+    results = dr.zeros((resolution, resolution, resolution))
 
     for z in range(num_images):
         # Para cada x e y de cada imagen 
@@ -53,8 +57,8 @@ def backprojection(transient_images: list, bounds: BoxBounds):
 # Recorrer la lista de imagenes de la carpeta y crear una instancia de TransientImage por cada imagen
 def initTransientImages( folder_name: str):
 
-    wall_dir = np.array([1, 0, 0])
-    wall_normal = np.array([0, 0, 1])
+    wall_dir = Float([1, 0, 0])
+    wall_normal = Float([0, 0, 1])
 
     # Obtener la lista de archivos en la carpeta
     files = os.listdir(folder_name)
@@ -94,8 +98,6 @@ def main():
     parser.add_argument("-folder", dest="folder_name", type=str, help="Nombre de la carpeta")
     parser.add_argument("-voxel_resolution", dest="voxel_resolution", type=int, help="Resolución del voxel")
     parser.add_argument("-max_ortho_size", dest="max_ortho_size", type=int, help="Tamaño máximo del ORTHO")
-
-
 
     # Parsear los argumentos de línea de comandos
     args = parser.parse_args()

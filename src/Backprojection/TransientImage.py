@@ -1,7 +1,10 @@
 import numpy as np
+import drjit as dr
+
+from drjit.cuda import Float, UInt32, Int
 
 class TransientImage:
-    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: np.ndarray, max_value: float, min_value: float):
+    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, Intensity_multiplier_unit: Float, data: np.ndarray, max_value: Float, min_value: Float):
         self.width = width
         self.height = height
         self.channels = channels
@@ -23,8 +26,8 @@ class TransientImage:
         self.px_half_width = 0.5
 
     # Devuelve la intensidad de la imagen en el punto (x, y)
-    def get_intensity_for_time(self, y: int, time: float) -> float:
-        x = int((time + self.laser_hit_time + self.wall_camera_dilation[y]) / self.time_per_coord)
+    def get_intensity_for_time(self, y: Int, time: Float) -> Float:
+        x = Int((time + self.laser_hit_time + self.wall_camera_dilation[y]) / self.time_per_coord)
         if x >= self.width or x < 0:
             return 0
         return self.data[x][y][0]
