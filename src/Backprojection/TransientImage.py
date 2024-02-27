@@ -4,7 +4,7 @@ import drjit as dr
 from drjit.cuda import Float, UInt32, Int
 
 class TransientImage:
-    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, Intensity_multiplier_unit: Float, data: np.ndarray, max_value: Float, min_value: Float):
+    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, intensity_multiplier_unit: Float, data: np.ndarray, max_value: Float, min_value: Float):
         self.width = width
         self.height = height
         self.channels = channels
@@ -31,6 +31,21 @@ class TransientImage:
         if x >= self.width or x < 0:
             return 0
         return self.data[x][y][0]
+    
+    # Devuelve el punto correspondiente a la coordenada y
+    def get_point_for_coord(self, y: Int, aux=None):
+        if aux is None:
+            aux = np.zeros(3)  # Inicializa un vector auxiliar si no se proporciona uno
+
+        aux[0] = self.point_wall_i[0] + (((float(y) / self.height) * self.wall_view_width + self.px_half_width) * self.wall_direction[0])
+        aux[1] = self.point_wall_i[1] + (((float(y) / self.height) * self.wall_view_width + self.px_half_width) * self.wall_direction[1])
+        aux[2] = self.point_wall_i[2] + (((float(y) / self.height) * self.wall_view_width + self.px_half_width) * self.wall_direction[2])
+        
+        return aux
+    
+    # Método para obtener el valor del atributo laser
+    def get_laser(self):
+        return self.laser
 
     def __str__(self):
         return f"TransientImage: width={self.width}, height={self.height}, channels={self.channels}, time_per_coord={self.time_per_coord}, intensity_multiplier_unit={self.intensity_multiplier_unit}, max_value={self.max_value}, min_value={self.min_value}"

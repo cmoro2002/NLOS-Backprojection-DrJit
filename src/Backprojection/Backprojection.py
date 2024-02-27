@@ -7,13 +7,14 @@ import drjit as dr
 
 # Imports de drjit
 from drjit.cuda import Float, Int
+from typing import List
 
 # Imports de mis clases
 from TransientImage import TransientImage
 from TransientVoxelization import initTransientImage
 from BoxBounds import BoxBounds
 
-def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: list):
+def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]):
     voxel = Float([fx, fy, fz])
     intensities = 0.0
 
