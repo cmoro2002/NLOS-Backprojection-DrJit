@@ -43,31 +43,11 @@ class TransientVoxelizationParams:
         self.UNWARP_LASER = False
         self.UNWARP_CAMERA = False
 
-        self.lasers = np.array([
-            [-0.2, 0, 0],
-            [0.2, 0.2, 0],
-            [0.2, 0.4, 0],
-            [0.2, 0.6, 0],
-            [-0.1, 0, 0],
-            [-0.1, 0.2, 0],
-            [-0.1, 0.4, 0],
-            [-0.1, 0.6, 0],
-            [-0.4, 0, 0],
-            [-0.4, 0.2, 0],
-            [-0.4, 0.4, 0],
-            [-0.4, 0.6, 0],
-            [-0.7, 0, 0],
-            [-0.7, 0.2, 0],
-            [-0.7, 0.4, 0],
-            [0.5, 0, 0],
-            [0.5, 0.2, 0],
-            [0.5, 0.4, 0]
-        ], dtype=np.float32)
+        self.lasers = np.array([0.2, 0, 0], dtype=np.float32)
 
         # Input
         self.inputFolder = "../../2016_LookingAroundCorners/bunny_final_multilaser_2b_highres"
         self.READ_HDR_FILES = True
-        self.acceptedFileName = AcceptedFileName(2, 2, self.READ_HDR_FILES, ".hdr" if self.READ_HDR_FILES else ".float")
         self.lasersFile = None
         self.readLasersAsText = False
         self.wallFile = None

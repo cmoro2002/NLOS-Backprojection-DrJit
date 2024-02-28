@@ -11,8 +11,9 @@ from typing import List
 
 # Imports de mis clases
 from TransientImage import TransientImage
-from TransientVoxelization import initTransientImage
+from TransientVoxelization import initTransientImage, parseArgsIntoParams
 from BoxBounds import BoxBounds
+from TransientVoxelizationParams import TransientVoxelizationParams
 
 def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]):
     voxel = Float([fx, fy, fz])
@@ -33,7 +34,16 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
     return intensities
 
 
-def backprojection(transient_images: list, bounds: BoxBounds):
+def backprojection(params: TransientVoxelizationParams):
+
+    # Crear una instancia de TransientImage
+    transient_images = initTransientImages(params.folder_name)
+
+    folder_name = params.folder_name
+    print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
+
+    #TODO: Parametros ORTHO_OFFSET x y z
+    bounds = BoxBounds(0, 0, 0, params.max_ortho_size, params.resolucion)
 
     num_images = len(transient_images)
     resolution = bounds.resolution
@@ -56,13 +66,10 @@ def backprojection(transient_images: list, bounds: BoxBounds):
 
 
 # Recorrer la lista de imagenes de la carpeta y crear una instancia de TransientImage por cada imagen
-def initTransientImages( folder_name: str):
-
-    wall_dir = Float([1, 0, 0])
-    wall_normal = Float([0, 0, 1])
+def initTransientImages(params: TransientVoxelizationParams):
 
     # Obtener la lista de archivos en la carpeta
-    files = os.listdir(folder_name)
+    files = os.listdir(params.inputFolder)
 
     # Ordenar la lista de archivos en orden alfabético
     files.sort()
@@ -74,9 +81,9 @@ def initTransientImages( folder_name: str):
     for file in files:
         # Comprobar si el archivo es una imagen (puedes ajustar esta comprobación según tus necesidades)
         if file.endswith(('.hdr')):
-            file_route = folder_name + "/" + file
+            file_route = params.inputFolder + "/" + file
             print(f"Reading file: {file_route}")
-            transient_image = initTransientImage(file_route)
+            transient_image = initTransientImage(params, file_route)
             
             # Agregar la instancia de TransientImage a la lista
             transient_images.append(transient_image)
@@ -87,14 +94,9 @@ def initTransientImages( folder_name: str):
     print(f"Se han leido un total de {count} de imagenes")
     return transient_images
 
+def parse_args():
 
-
-def main():
-
-    # Configuración de la variable de entorno para seleccionar la GPU a utilizar
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
-    # Configuración de los argumentos de línea de comandos
+     # Configuración de los argumentos de línea de comandos
     parser = argparse.ArgumentParser(description="Descripción de tu programa")
     parser.add_argument("-folder", dest="folder_name", type=str, help="Nombre de la carpeta")
     parser.add_argument("-voxel_resolution", dest="voxel_resolution", type=int, help="Resolución del voxel")
@@ -104,22 +106,22 @@ def main():
     args = parser.parse_args()
 
     # Acceder al valor del argumento -folder
-    folder_name = args.folder_name
     print(f"reading files from: {folder_name}")
 
-    resolucion = args.voxel_resolution
-    max_ortho_size = args.max_ortho_size
+    # Parsear los argumentos de línea de comandos
+    params = TransientVoxelizationParams()
+    parseArgsIntoParams(params, args)
 
-    # Crear una instancia de TransientImage
-    # transient_image = TransientImage(10, 10, 3, 0.1, 0.1, None, 1.0, 0.0)
-    transient_images = initTransientImages(folder_name)
+    return params
 
-    print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
+def main():
 
-    #TODO: Parametros ORTHO_OFFSET x y z
-    bounds = BoxBounds(0, 0, 0, max_ortho_size, resolucion)
+    # Configuración de la variable de entorno para seleccionar la GPU a utilizar
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-    backprojection(transient_images, bounds)
+    params = parse_args()
+   
+    backprojection(params)
 
 
 

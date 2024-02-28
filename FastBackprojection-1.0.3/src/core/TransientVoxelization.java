@@ -1007,12 +1007,7 @@ public class TransientVoxelization
 	/**
 	 * Parses all input <args> and stores it into our handy class <params>. If false is returned, a soft program exit is requested
 	 */
-	public static boolean parseArgsIntoParams(TransientVoxelizationParams params,String[] args) 
-	{
-		return parseArgsIntoParams(params,args,false);
-	}
-	public static boolean parseArgsIntoParams(TransientVoxelizationParams params,String[] args,boolean incompleteParams) //Incomplete params is set to true if this params are not the only ones which are going to be set. It overrides
-																														 //standard behaviours such as forcing one image to be printed forcefully and so on
+	public static boolean parseArgsIntoParams(TransientVoxelizationParams params,String[] args)
 	{
 		for(int i=0;i<args.length;i++)
 		{
@@ -1237,14 +1232,6 @@ public class TransientVoxelization
 			}
 			catch(Exception e){
 				System.err.println("Error parsing arg "+expr);
-			}
-		}
-		
-		if(!incompleteParams)
-		{
-			if(!params.save3DDump&&!params.saveImage&&!params.save3DRaw&&!params.save2DRaw){
-				System.out.println("No output save especified. Saving image by default");
-				params.saveImage=true;
 			}
 		}
 		
