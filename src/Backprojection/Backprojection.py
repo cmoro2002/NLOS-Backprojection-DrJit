@@ -1,3 +1,15 @@
+"""
+Nombre del archivo: Backprojection.py
+Descripción: Implementación de la función de backprojection 
+Autor: César Moro Latorre
+Fecha de creación: 04/02/2024
+Última modificación: 29/04/2024
+
+Ejecución: python3 Backprojection.py -folder <nombre_carpeta> -voxel_resolution <resolución_voxel> -max_ortho_size <tamaño_ortho>
+    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 128 -ortho
+"""
+
+
 # Imports de librerias
 import time
 import argparse
@@ -6,8 +18,10 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-from drjit.cuda import Float, Int
+# from drjit.cuda import Float, Int
+from drjit.llvm import Float, Int
 from typing import List
+import matplotlib.pyplot as plt
 
 # Imports de mis clases
 from TransientImage import TransientImage
@@ -21,12 +35,13 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
 
     for transient_image in transient_images:
         for h in range(transient_image.height):
+
             # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
             wall_point = transient_image.getPointForCoord(h)
 
             # Calcular el tiempo
-            time = (dr.sqrt(dr.sum(dr.square(transient_image.getLaser() - voxel))) +
-                    dr.sqrt(dr.sum(dr.square(voxel - wall_point))))
+            time = (np.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
+                np.sqrt(np.sum(np.square(voxel - wall_point))))
 
             # Sumar la intensidad correspondiente al tiempo
             intensities += transient_image.getIntensityForTime(h, time)
@@ -37,18 +52,19 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
 def backprojection(params: TransientVoxelizationParams):
 
     # Crear una instancia de TransientImage
-    transient_images = initTransientImages(params.folder_name)
+    transient_images = initTransientImages(params)
 
-    folder_name = params.folder_name
+    folder_name = params.inputFolder
     print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
     #TODO: Parametros ORTHO_OFFSET x y z
-    bounds = BoxBounds(0, 0, 0, params.max_ortho_size, params.resolucion)
+    bounds = BoxBounds(0, 0, 0, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
 
     num_images = len(transient_images)
     resolution = bounds.resolution
 
-    results = dr.zeros((resolution, resolution, resolution))
+    print(f"Resolución: {resolution}")
+    results = np.zeros((resolution, resolution, resolution))
 
     for z in range(num_images):
         # Para cada x e y de cada imagen 
@@ -61,6 +77,17 @@ def backprojection(params: TransientVoxelizationParams):
 
                 # Almacenar la suma de los resultados
                 results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
+            print(f"Columna {y} procesada")
+        print(f"Imagen {z} procesada")
+
+    # Guardar los resultados en un fichero:
+    print(f"Guardando resultados en {folder_name}_results")
+    np.save(f"{folder_name}_results", results)
+
+    # Mostrar los resultados
+    plt.imshow(results[0, :, :])
+    plt.show()
+    
                  
 
 
@@ -94,36 +121,17 @@ def initTransientImages(params: TransientVoxelizationParams):
     print(f"Se han leido un total de {count} de imagenes")
     return transient_images
 
-def parse_args():
-
-     # Configuración de los argumentos de línea de comandos
-    parser = argparse.ArgumentParser(description="Descripción de tu programa")
-    parser.add_argument("-folder", dest="folder_name", type=str, help="Nombre de la carpeta")
-    parser.add_argument("-voxel_resolution", dest="voxel_resolution", type=int, help="Resolución del voxel")
-    parser.add_argument("-max_ortho_size", dest="max_ortho_size", type=int, help="Tamaño máximo del ORTHO")
-
-    # Parsear los argumentos de línea de comandos
-    args = parser.parse_args()
-
-    # Acceder al valor del argumento -folder
-    print(f"reading files from: {folder_name}")
-
-    # Parsear los argumentos de línea de comandos
-    params = TransientVoxelizationParams()
-    parseArgsIntoParams(params, args)
-
-    return params
-
 def main():
 
     # Configuración de la variable de entorno para seleccionar la GPU a utilizar
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-    params = parse_args()
-   
+    # Parsear los argumentos de línea de comandos
+    params = TransientVoxelizationParams()
+    parseArgsIntoParams(params)
+
+    print(f"Argumentos de línea de comandos leidos")
     backprojection(params)
-
-
 
 
 if __name__ == "__main__":

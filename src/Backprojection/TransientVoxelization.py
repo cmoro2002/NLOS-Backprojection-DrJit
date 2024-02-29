@@ -4,18 +4,19 @@ from HDRDecoder import decodeHDRFile
 from StreakLaser import StreakLaser
 
 # Imports de drjit
-from drjit.cuda import Float, Int
+# from drjit.cuda import Float, UInt32
+from drjit.llvm import Float, Int
 
 import argparse
 import numpy as np
 
-def parseArgsIntoParams(params, args):
+def parseArgsIntoParams(params):
 
      # Configuración de los argumentos de línea de comandos
     parser = argparse.ArgumentParser(description="Descripción de tu programa")
 
     # Argumentos de línea de comandos
-    parser.add_argument("-folder", dest="folder_name", type=str, help="Nombre de la carpeta")
+    parser.add_argument("-folder", dest="inputFolder", type=str, help="Nombre de la carpeta")
     parser.add_argument("-fov", type=float)
     parser.add_argument("-voxelRes", type=int)
     parser.add_argument("-ortho", nargs=4, type=float)
@@ -24,8 +25,11 @@ def parseArgsIntoParams(params, args):
     parser.add_argument("-laserOrigin", nargs=3, type=float)
     parser.add_argument("-t_delta", type=float)
     parser.add_argument("-lasers", nargs='+', type=float, help="Componentes de los láseres")
-    parsed_args = parser.parse_args(args)
+    parsed_args = parser.parse_args()
 
+    # Asignar los argumentos a los parámetros
+    if parsed_args.inputFolder is not None:
+        params.inputFolder = parsed_args.inputFolder
     if parsed_args.fov is not None:
         params.fov = np.radians(parsed_args.fov)
     if parsed_args.voxelRes is not None:
@@ -55,27 +59,29 @@ def setParamsForCamera(params: TransientVoxelizationParams, transient_image: Tra
     wallNormal = Float([0, 0, 1])
     dwall = np.sqrt(np.linalg.norm(np.subtract(params.camera, params.lookTo))**2)
     semiWidth = np.tan(params.fov / 2) * dwall
-    pxHalfHeight = semiWidth * params.streakYratio / params.height
-    streakAbsY = semiWidth - pxHalfHeight - (streakLaser.streak * params.streakYratio / params.height) * semiWidth * 2
+    pxHalfHeight = semiWidth * params.streakYratio / transient_image.height
+    streakAbsY = semiWidth - pxHalfHeight - (streakLaser.streak * params.streakYratio / transient_image.height) * semiWidth * 2
 
     params.wallDirection = wallDir
     params.wallNormal = wallNormal
-    wall_up = np.cross(params.wallNormal, params.wallDirection)
+    wall_up = np.cross(transient_image.wallNormal, transient_image.wallDirection)
 
     pointWallI = params.lookTo.copy()
     pointWallI += wall_up * streakAbsY
-    wall_up *= -semiWidth
+    wall_up = (wall_up * -semiWidth).astype(float)
     pointWallI += wall_up
 
-    params.wallViewWidth = semiWidth * 2
-    params.pxHalfWidth = params.wallViewWidth / (params.height * 2)
+    transient_image.wallViewWidth = semiWidth * 2
+    transient_image.pxHalfWidth = transient_image.wallViewWidth / (transient_image.height * 2)
 
     dwallstreaksq = dwall**2 + streakAbsY**2
 
     if not params.UNWARP_CAMERA:
-        for i in range(len(params.wallCameraDilation)):
-            x = (i / len(params.wallCameraDilation)) * params.wallViewWidth - semiWidth + params.pxHalfWidth
-            params.wallCameraDilation[i] = np.sqrt(x**2 + dwallstreaksq)
+        for i in range(len(transient_image.wallCameraDilation)):
+            x = (i / len(transient_image.wallCameraDilation)) * transient_image.wallViewWidth - semiWidth + transient_image.pxHalfWidth
+            transient_image.wallCameraDilation[i] = np.sqrt(x**2 + dwallstreaksq)
+
+    transient_image.laser = params.lasers
 
 def initTransientImage(params: TransientVoxelizationParams, file_name: str):
 

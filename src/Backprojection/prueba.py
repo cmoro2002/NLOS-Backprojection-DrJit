@@ -2,7 +2,8 @@ import numpy as np
 import drjit as dr
 import os
 
-from drjit.cuda import Float, UInt32
+# from drjit.cuda import Float, UInt32
+from drjit.llvm import Float, Int
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
