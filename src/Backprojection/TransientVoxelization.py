@@ -5,7 +5,7 @@ from StreakLaser import StreakLaser
 
 # Imports de drjit
 # from drjit.cuda import Float, UInt32
-from drjit.llvm import Float, Int
+# from drjit.llvm import Float, Int
 
 import argparse
 import numpy as np
@@ -55,8 +55,8 @@ def parseArgsIntoParams(params):
 
 
 def setParamsForCamera(params: TransientVoxelizationParams, transient_image: TransientImage, streakLaser: StreakLaser):
-    wallDir = Float([1, 0, 0])
-    wallNormal = Float([0, 0, 1])
+    wallDir = np.array([1, 0, 0])
+    wallNormal = np.array([0, 0, 1])
     dwall = np.sqrt(np.linalg.norm(np.subtract(params.camera, params.lookTo))**2)
     semiWidth = np.tan(params.fov / 2) * dwall
     pxHalfHeight = semiWidth * params.streakYratio / transient_image.height
