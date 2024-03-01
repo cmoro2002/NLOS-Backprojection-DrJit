@@ -1,11 +1,11 @@
-import imageio
+import cv2
 
 from TransientImage import TransientImage
 
 def decodeHDRFile(file_name: str):
 
     # Leer la imagen HDR
-    img = imageio.imread(file_name, format='HDR')
+    img = cv2.imread(file_name, flags=cv2.IMREAD_ANYDEPTH)
 
     # Definir los parametros de la imagen
     width = img.shape[1]
@@ -15,7 +15,7 @@ def decodeHDRFile(file_name: str):
     max = img.max()
     min = img.min()
 
-    # print(f"max: {max}, min: {min}")
+    print(f"max: {max}, min: {min}")
 
     timeScale = 0.1
     intensityUnit = 0.1

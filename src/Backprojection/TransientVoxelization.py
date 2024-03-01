@@ -85,17 +85,13 @@ def setParamsForCamera(params: TransientVoxelizationParams, transient_image: Tra
 
 def initTransientImage(params: TransientVoxelizationParams, file_name: str):
 
-
-
-    # TODO: Definir StreakLaser a partir del file
+    # TODO: Definir bien el streaklaser
     streakLaser = StreakLaser(0, 0)
 
     transient_image = decodeHDRFile(file_name)
 
-    # TODO: Definir parametros de la camara
     setParamsForCamera(params, transient_image, streakLaser)
 
-    # TODO: Definir distancia al laser  y su hit time
     laserDist = np.sqrt(np.linalg.norm(transient_image.getLaser() - params.laserOrigin)**2)
     transient_image.setLaserHitTime(0 if params.UNWARP_CAMERA else laserDist)
 
