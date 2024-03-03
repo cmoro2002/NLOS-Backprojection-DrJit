@@ -6,7 +6,7 @@ Fecha de creación: 04/02/2024
 Última modificación: 29/04/2024
 
 Ejecución: python3 Backprojection.py -folder <nombre_carpeta> -voxel_resolution <resolución_voxel> -max_ortho_size <tamaño_ortho>
-    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 128 -ortho
+    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 128
 """
 
 
@@ -68,7 +68,9 @@ def backprojection(params: TransientVoxelizationParams):
     for z in range(num_images):
         # Para cada x e y de cada imagen 
         for y in range(resolution):
+            start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
             for x in range(resolution):
+                start_time_x = time.time()  # Registrar el tiempo de inicio de la iteración
 
                 fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
                 fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
@@ -76,7 +78,13 @@ def backprojection(params: TransientVoxelizationParams):
 
                 # Almacenar la suma de los resultados
                 results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
-            print(f"Columna {y} procesada")
+
+                end_time_x = time.time()  # Registrar el tiempo de finalización de la iteración
+                elapsed_time = end_time_x - start_time_x  # Calcular el tiempo transcurrido en la iteración
+                print(f"Iteración (x={x}, y={y}, z={z}) tarda {elapsed_time} segundos")
+            end_time_y = time.time()  # Registrar el tiempo de finalización de la iteración
+            elapsed_time = end_time_y - start_time_y  #
+            print(f"Iteración (y={y}, z={z}) tarda {elapsed_time} segundos")
         print(f"Imagen {z} procesada")
 
     # Guardar los resultados en un fichero:
