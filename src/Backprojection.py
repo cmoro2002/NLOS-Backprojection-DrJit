@@ -6,7 +6,7 @@ Fecha de creación: 04/02/2024
 Última modificación: 29/04/2024
 
 Ejecución: python3 Backprojection.py -folder <nombre_carpeta> -voxel_resolution <resolución_voxel> -max_ortho_size <tamaño_ortho>
-    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 128
+    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 256 -lasers 0.2 0 0 -laser_origin 0.2 0 1 -cam 0.2 0 1 -lookTo 0.2 0 0 -fov 90 -t_delta 0.005 -ortho -0.1 -0.35 0.9 0.7 
 """
 
 
@@ -18,7 +18,8 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-# from drjit.cuda import Float, Int
+from drjit.llvm import Float, Int, Array3f
+
 from typing import List
 import matplotlib.pyplot as plt
 
@@ -29,7 +30,8 @@ from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 
 def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images: List[TransientImage]):
-    voxel = np.array([fx, fy, fz])
+    voxel = Array3f([fx, fy, fz])
+    print(f"Voxel: {voxel}")
     intensities = 0.0
 
     for transient_image in transient_images:
@@ -122,7 +124,6 @@ def initTransientImages(params: TransientVoxelizationParams):
             # Agregar la instancia de TransientImage a la lista
             transient_images.append(transient_image)
 
-            print( f"TransientImage {count}: {transient_image}")
             count += 1
 
     print(f"Se han leido un total de {count} de imagenes")

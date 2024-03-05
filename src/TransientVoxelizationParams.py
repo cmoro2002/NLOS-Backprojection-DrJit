@@ -1,5 +1,8 @@
 import numpy as np
 
+import drjit as dr
+
+from drjit.llvm import Array3f
 # Clase que contiene los parámetros de la voxelización transitoria
 
 class TransientVoxelizationParams:
@@ -33,17 +36,17 @@ class TransientVoxelizationParams:
         # Geometry config
         self.streakYratio = 1
         self.fov = np.radians(90)
-        self.camera = np.array([-0.2, 0, 1], dtype=np.float32)
-        self.lookTo = np.array([-0.2, 0, 0], dtype=np.float32)
-        self.laserOrigin = np.array([-0.2, 0, 1], dtype=np.float32)
-        self.wallNormal = np.array([0, 0, 1], dtype=np.float32)
-        self.wallDir = np.array([1, 0, 0], dtype=np.float32)
+        self.camera = np.array([-0.2, 0, 1])
+        self.lookTo = np.array([-0.2, 0, 0])
+        self.laserOrigin = np.array([-0.2, 0, 1])
+        self.wallNormal = np.array([0, 0, 1])
+        self.wallDir = np.array([1, 0, 0])
         self.t_delta = 0.001
         self.t0 = 0
         self.UNWARP_LASER = False
         self.UNWARP_CAMERA = False
 
-        self.lasers = np.array([0.2, 0, 0], dtype=np.float32)
+        self.lasers = np.array([0.2, 0, 0])
 
         # Input
         self.inputFolder = "../../2016_LookingAroundCorners/bunny_final_multilaser_2b_highres"

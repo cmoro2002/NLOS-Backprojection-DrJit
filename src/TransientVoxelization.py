@@ -24,7 +24,8 @@ def parseArgsIntoParams(params):
     parser.add_argument("-lookTo", nargs=3, type=float)
     parser.add_argument("-laserOrigin", nargs=3, type=float)
     parser.add_argument("-t_delta", type=float)
-    parser.add_argument("-lasers", nargs='+', type=float, help="Componentes de los láseres")
+    parser.add_argument("-lasers", nargs=3, type=float, help="Componentes de los láseres")
+    parser.add_argument("-laser_origin", nargs=3, type=float, help="Componentes del origen del láser")
     parsed_args = parser.parse_args()
 
     # Asignar los argumentos a los parámetros
@@ -52,6 +53,8 @@ def parseArgsIntoParams(params):
         params.t_delta = parsed_args.t_delta
     if parsed_args.lasers is not None:
         params.lasers = np.array(parsed_args.lasers, dtype=np.float32)
+    if parsed_args.laser_origin is not None:
+        params.laserOrigin = np.array(parsed_args.laser_origin, dtype=np.float32)
 
 
 def setParamsForCamera(params: TransientVoxelizationParams, transient_image: TransientImage, streakLaser: StreakLaser):
@@ -66,7 +69,7 @@ def setParamsForCamera(params: TransientVoxelizationParams, transient_image: Tra
     params.wallNormal = wallNormal
     wall_up = np.cross(transient_image.wallNormal, transient_image.wallDirection)
 
-    pointWallI = params.lookTo.copy()
+    pointWallI = params.lookTo
     pointWallI += wall_up * streakAbsY
     wall_up = (wall_up * -semiWidth).astype(float)
     pointWallI += wall_up

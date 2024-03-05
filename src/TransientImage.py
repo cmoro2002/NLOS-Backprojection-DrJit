@@ -2,19 +2,19 @@ import numpy as np
 import drjit as dr
 
 # from drjit.cuda import Float, UInt32
-# from drjit.llvm import Float, Int
+from drjit.llvm import Float, Int, Array3f, Matrix3f
 
 class TransientImage:
-    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: np.ndarray, max_value: float, min_value: float):
+    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: np.array, max_value: float, min_value: float):
         self.width = width
         self.height = height
         self.channels = channels
         self.time_per_coord = time_per_coord
         self.intensity_multiplier_unit = intensity_multiplier_unit
         if data is not None:
-            self.data = np.array(data)
+            self.data = data
         else:
-            self.data = np.zeros((width, height, channels))
+            self.data = dr.zeros(Array3f, shape=(height, width, channels))
         self.maxValue = max_value
         self.minValue = min_value
         self.laserHitTime = 0
