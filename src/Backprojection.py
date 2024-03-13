@@ -29,10 +29,10 @@ from TransientVoxelization import initTransientImage, parseArgsIntoParams
 from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 
-def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images: List[TransientImage]):
+def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]):
     voxel = Array3f([fx, fy, fz])
-    print(f"Voxel: {voxel}")
-    intensities = 0.0
+    altura = transient_images[0].height
+    intensities = dr.zeros(Float,altura)
 
     for transient_image in transient_images:
         for h in range(transient_image.height):
@@ -45,9 +45,10 @@ def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images
                 np.sqrt(np.sum(np.square(voxel - wall_point))))
 
             # Sumar la intensidad correspondiente al tiempo
-            intensities += transient_image.getIntensityForTime(h, time)
+            intensities[h] += transient_image.getIntensityForTime(h, time)
 
-    return intensities
+    dr.eval(intensities)
+    return dr.sum(intensities)
 
 
 def backprojection(params: TransientVoxelizationParams):

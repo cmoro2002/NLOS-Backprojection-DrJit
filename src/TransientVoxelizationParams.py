@@ -36,11 +36,12 @@ class TransientVoxelizationParams:
         # Geometry config
         self.streakYratio = 1
         self.fov = np.radians(90)
-        self.camera = np.array([-0.2, 0, 1])
-        self.lookTo = np.array([-0.2, 0, 0])
-        self.laserOrigin = np.array([-0.2, 0, 1])
-        self.wallNormal = np.array([0, 0, 1])
-        self.wallDir = np.array([1, 0, 0])
+        self.camera = Array3f(np.array([-0.2, 0, 1]))
+        self.lookTo = Array3f(np.array([-0.2, 0, 0]))
+        print(type(self.lookTo))
+        self.laserOrigin = Array3f(np.array([-0.2, 0, 1]))
+        self.wallNormal = Array3f(np.array([0, 0, 1]))
+        self.wallDir = Array3f(np.array([1, 0, 0]))
         self.t_delta = 0.001
         self.t0 = 0
         self.UNWARP_LASER = False

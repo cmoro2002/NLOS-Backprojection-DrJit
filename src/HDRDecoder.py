@@ -1,12 +1,18 @@
 import cv2
 import numpy as np
 
+import drjit as dr
+
+from drjit.llvm import Float, TensorXf
+
 from TransientImage import TransientImage
 
-def decodeHDRFile(file_name: str):
+def decodeHDRFile(file_name: str): 
 
     # Leer la imagen HDR
     img = cv2.imread(file_name, flags=cv2.IMREAD_ANYDEPTH)
+
+    tensor = TensorXf(img)
 
     # Definir los parametros de la imagen
     width = img.shape[1]
@@ -19,6 +25,6 @@ def decodeHDRFile(file_name: str):
     timeScale = 0.1
     intensityUnit = 0.1
 
-    transientImage = TransientImage(width, height, channels, timeScale, intensityUnit, img, max, min)
+    transientImage = TransientImage(width, height, channels, timeScale, intensityUnit, tensor, max, min)
 
     return transientImage

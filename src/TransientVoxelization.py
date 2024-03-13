@@ -3,9 +3,11 @@ from TransientVoxelizationParams import TransientVoxelizationParams
 from HDRDecoder import decodeHDRFile
 from StreakLaser import StreakLaser
 
+import drjit as dr
+
 # Imports de drjit
 # from drjit.cuda import Float, UInt32
-# from drjit.llvm import Float, Int
+from drjit.llvm import Float, Int, Array3f
 
 import argparse
 import numpy as np
@@ -63,15 +65,16 @@ def setParamsForCamera(params: TransientVoxelizationParams, transient_image: Tra
     dwall = np.sqrt(np.linalg.norm(np.subtract(params.camera, params.lookTo))**2)
     semiWidth = np.tan(params.fov / 2) * dwall
     pxHalfHeight = semiWidth * params.streakYratio / transient_image.height
-    streakAbsY = semiWidth - pxHalfHeight - (streakLaser.streak * params.streakYratio / transient_image.height) * semiWidth * 2
+    streakAbsY = Float(semiWidth - pxHalfHeight - (streakLaser.streak * params.streakYratio / transient_image.height) * semiWidth * 2)
 
     params.wallDirection = wallDir
     params.wallNormal = wallNormal
-    wall_up = np.cross(transient_image.wallNormal, transient_image.wallDirection)
+    # wall_up = np.cross(transient_image.wallNormal, transient_image.wallDirection)
+    wall_up = dr.cross(transient_image.wallNormal, transient_image.wallDirection)
 
-    pointWallI = params.lookTo
+    pointWallI = Array3f(params.lookTo)
     pointWallI += wall_up * streakAbsY
-    wall_up = (wall_up * -semiWidth).astype(float)
+    wall_up = wall_up * -semiWidth
     pointWallI += wall_up
 
     transient_image.wallViewWidth = semiWidth * 2

@@ -6,7 +6,7 @@ from drjit.llvm import Float, Int, Array3f, Matrix3f
 
 
 # Definir la dimensión del vector
-dimension = 300000000
+dimension = 300000
 
 # Crear un vector aleatorio
 vector = np.random.rand(dimension)
