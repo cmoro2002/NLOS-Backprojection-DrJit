@@ -2,7 +2,7 @@ import numpy as np
 
 import drjit as dr
 
-from drjit.llvm import Array3f
+from drjit.llvm import Array3f, Float
 # Clase que contiene los parámetros de la voxelización transitoria
 
 class TransientVoxelizationParams:
@@ -36,18 +36,17 @@ class TransientVoxelizationParams:
         # Geometry config
         self.streakYratio = 1
         self.fov = np.radians(90)
-        self.camera = Array3f(np.array([-0.2, 0, 1]))
-        self.lookTo = Array3f(np.array([-0.2, 0, 0]))
-        print(type(self.lookTo))
-        self.laserOrigin = Array3f(np.array([-0.2, 0, 1]))
-        self.wallNormal = Array3f(np.array([0, 0, 1]))
-        self.wallDir = Array3f(np.array([1, 0, 0]))
+        self.camera = Float(-0.2, 0, 1)
+        self.lookTo = Float(-0.2, 0, 0)
+        self.laserOrigin = Float(-0.2, 0, 1)
+        self.wallNormal = Float(0, 0, 1)
+        self.wallDir = Float(1, 0, 0)
         self.t_delta = 0.001
         self.t0 = 0
         self.UNWARP_LASER = False
         self.UNWARP_CAMERA = False
 
-        self.lasers = np.array([0.2, 0, 0])
+        self.lasers = Float(0.2, 0, 0)
 
         # Input
         self.inputFolder = "../../2016_LookingAroundCorners/bunny_final_multilaser_2b_highres"
@@ -91,6 +90,6 @@ class TransientVoxelizationParams:
     def validate(self):
         # Ensure intensity multiplier is in range
         self.MAX_INTENSITY_MULTIPLIER = max(1, min(self.MAX_INTENSITY_MULTIPLIER, 255))
-        self.wallNormal /= np.linalg.norm(self.wallNormal)
-        self.wallDir /= np.linalg.norm(self.wallDir)
+        self.wallNormal /= dr.norm(self.wallNormal)
+        self.wallDir /= dr.norm(self.wallDir)
         self.ELLIPSOIDS_PER_PIXEL = max(1, self.ELLIPSOIDS_PER_PIXEL)

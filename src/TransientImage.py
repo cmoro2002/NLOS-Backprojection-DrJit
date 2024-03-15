@@ -19,20 +19,20 @@ def calcular_posicion_aplanada(coordenadas, forma):
     M, N, P = forma
     return i * N * P + j * P + k
 class TransientImage:
-    def __init__(self, width: int, height: int, channels: int, time_per_coord: float, intensity_multiplier_unit: float, data: TensorXf, max_value: float, min_value: float):
+    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, intensity_multiplier_unit: Float, data: TensorXf, max_value: Float, min_value: Float):
         self.width = width
         self.height = height
         self.channels = channels
         self.time_per_coord = time_per_coord
         self.intensity_multiplier_unit = intensity_multiplier_unit
         if data is not None:
-            self.data = Float(data.array)
+            self.data = data.array
         else:
             self.data = dr.zeros(Array3f, shape=(height, width, channels))
         self.maxValue = max_value
         self.minValue = min_value
         self.laserHitTime = 0
-        self.wallCameraDilation = np.zeros(height)
+        self.wallCameraDilation = dr.zeros(Float,height)
         self.point_wall_i = dr.zeros(Array3f,1)
         self.wallDirection = dr.zeros(Array3f,1)
         self.wallNormal = dr.zeros(Array3f,1)
@@ -50,15 +50,26 @@ class TransientImage:
         return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
     
     # Devuelve el punto correspondiente a la coordenada y
-    def getPointForCoord(self, y: Int, aux=None):
+    def getPointForCoord(self, y: Int, aux=None):     
         if aux is None:
             aux = dr.zeros(Array3f, 1)  # Inicializa un vector auxiliar si no se proporciona uno
 
-        aux[0] = self.point_wall_i[0] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[0])
-        aux[1] = self.point_wall_i[1] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[1])
-        aux[2] = self.point_wall_i[2] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[2])
-        
-        return aux
+        # aux[0] = self.point_wall_i[0] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[0])
+        # aux[1] = self.point_wall_i[1] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[1])
+        # aux[2] = self.point_wall_i[2] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[2])
+
+        ratio = float(y) / self.height
+        offset = ratio * self.wallViewWidth + self.pxHalfWidth
+
+        # aux[0], aux[1], aux[2] = (
+        #     self.point_wall_i[0] + offset * self.wallDirection[0],
+        #     self.point_wall_i[1] + offset * self.wallDirection[1],
+        #     self.point_wall_i[2] + offset * self.wallDirection[2]
+        # )
+
+        aux1 = dr.fma(offset, self.wallDirection, self.point_wall_i)
+
+        return aux1
     
     # Método para obtener el valor del atributo laser
     def get_laser(self):

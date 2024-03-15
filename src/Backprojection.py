@@ -41,8 +41,8 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
             wall_point = transient_image.getPointForCoord(h)
 
             # Calcular el tiempo
-            time = (np.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
-                np.sqrt(np.sum(np.square(voxel - wall_point))))
+            time = (dr.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
+                dr.sqrt(np.sum(np.square(voxel - wall_point))))
 
             # Sumar la intensidad correspondiente al tiempo
             intensities[h] += transient_image.getIntensityForTime(h, time)
@@ -68,7 +68,8 @@ def backprojection(params: TransientVoxelizationParams):
     print(f"Resolución: {resolution}")
     results = np.zeros((resolution, resolution, resolution))
 
-    for z in range(num_images):
+    # for z in range(num_images):
+    for z in range(1):
         # Para cada x e y de cada imagen 
         for y in range(resolution):
             start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
@@ -86,7 +87,7 @@ def backprojection(params: TransientVoxelizationParams):
                 elapsed_time = end_time_x - start_time_x  # Calcular el tiempo transcurrido en la iteración
                 print(f"Iteración (x={x}, y={y}, z={z}) tarda {elapsed_time} segundos")
             end_time_y = time.time()  # Registrar el tiempo de finalización de la iteración
-            elapsed_time = end_time_y - start_time_y  #
+            elapsed_time = end_time_y - start_time_y 
             print(f"Iteración (y={y}, z={z}) tarda {elapsed_time} segundos")
         print(f"Imagen {z} procesada")
 
@@ -94,12 +95,12 @@ def backprojection(params: TransientVoxelizationParams):
     print(f"Guardando resultados en {folder_name}_results")
     np.save(f"{folder_name}_results", results)
 
-    # Mostrar los resultados
-    plt.imshow(results[0, :, :])
+    flattened_results = results[:,:,0]
+    plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
+    plt.colorbar()
     plt.show()
     
-                 
-
+    print(f"Proceso de backprojection finalizado")
 
 
 # Recorrer la lista de imagenes de la carpeta y crear una instancia de TransientImage por cada imagen

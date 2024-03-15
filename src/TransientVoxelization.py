@@ -46,23 +46,23 @@ def parseArgsIntoParams(params):
         params.ORTHO_SIZEY = size
         params.ORTHO_SIZEZ = size
     if parsed_args.cam is not None:
-        params.camera = np.array(parsed_args.cam, dtype=np.float32)
+        params.camera = Float(parsed_args.cam)
     if parsed_args.lookTo is not None:
-        params.lookTo = np.array(parsed_args.lookTo, dtype=np.float32)
+        params.lookTo = Float(parsed_args.lookTo)
     if parsed_args.laserOrigin is not None:
-        params.laserOrigin = np.array(parsed_args.laserOrigin, dtype=np.float32)
+        params.laserOrigin = Float(parsed_args.laserOrigin)
     if parsed_args.t_delta is not None:
         params.t_delta = parsed_args.t_delta
     if parsed_args.lasers is not None:
-        params.lasers = np.array(parsed_args.lasers, dtype=np.float32)
+        params.lasers = Float(parsed_args.lasers)
     if parsed_args.laser_origin is not None:
-        params.laserOrigin = np.array(parsed_args.laser_origin, dtype=np.float32)
+        params.laserOrigin = Float(parsed_args.laser_origin)
 
 
 def setParamsForCamera(params: TransientVoxelizationParams, transient_image: TransientImage, streakLaser: StreakLaser):
-    wallDir = np.array([1, 0, 0])
-    wallNormal = np.array([0, 0, 1])
-    dwall = np.sqrt(np.linalg.norm(np.subtract(params.camera, params.lookTo))**2)
+    wallDir = Float(1, 0, 0)
+    wallNormal = Float(0, 0, 1)
+    dwall = dr.sqrt(np.linalg.norm(np.subtract(params.camera, params.lookTo))**2)
     semiWidth = np.tan(params.fov / 2) * dwall
     pxHalfHeight = semiWidth * params.streakYratio / transient_image.height
     streakAbsY = Float(semiWidth - pxHalfHeight - (streakLaser.streak * params.streakYratio / transient_image.height) * semiWidth * 2)
