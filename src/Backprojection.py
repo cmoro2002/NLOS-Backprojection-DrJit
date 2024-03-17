@@ -18,7 +18,7 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-from drjit.llvm import Float, Int, Array3f
+from drjit.llvm import Float, Int, Array3f, UInt32, Loop
 
 from typing import List
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ from TransientVoxelization import initTransientImage, parseArgsIntoParams
 from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 
-def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]):
+def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
     voxel = Array3f([fx, fy, fz])
     altura = transient_images[0].height
     intensities = dr.zeros(Float,altura)
@@ -45,7 +45,10 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
                 dr.sqrt(np.sum(np.square(voxel - wall_point))))
 
             # Sumar la intensidad correspondiente al tiempo
-            intensities[h] += transient_image.getIntensityForTime(h, time)
+            valor = transient_image.getIntensityForTime(h, time)
+
+            intensities[h] = valor
+
 
     dr.eval(intensities)
     return dr.sum(intensities)

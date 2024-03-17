@@ -42,7 +42,7 @@ class TransientImage:
 
     # Devuelve la intensidad de la imagen en el punto (x, y)
     def getIntensityForTime(self, y: int, time: float) -> float:
-        x = int((time + self.laserHitTime + self.wallCameraDilation[y]) / self.time_per_coord)
+        x = int( (self.laserHitTime + self.wallCameraDilation[y])  / self.time_per_coord)
         if x >= self.width or x < 0:
             return 0
         
@@ -50,7 +50,7 @@ class TransientImage:
         return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
     
     # Devuelve el punto correspondiente a la coordenada y
-    def getPointForCoord(self, y: Int, aux=None):     
+    def getPointForCoord(self, y: int, aux=None):     
         if aux is None:
             aux = dr.zeros(Array3f, 1)  # Inicializa un vector auxiliar si no se proporciona uno
 
@@ -61,15 +61,7 @@ class TransientImage:
         ratio = float(y) / self.height
         offset = ratio * self.wallViewWidth + self.pxHalfWidth
 
-        # aux[0], aux[1], aux[2] = (
-        #     self.point_wall_i[0] + offset * self.wallDirection[0],
-        #     self.point_wall_i[1] + offset * self.wallDirection[1],
-        #     self.point_wall_i[2] + offset * self.wallDirection[2]
-        # )
-
-        aux1 = dr.fma(offset, self.wallDirection, self.point_wall_i)
-
-        return aux1
+        return dr.fma(offset, self.wallDirection, self.point_wall_i)
     
     # Método para obtener el valor del atributo laser
     def get_laser(self):
