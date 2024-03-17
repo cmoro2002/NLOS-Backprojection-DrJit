@@ -22,7 +22,7 @@ def medir_tiempo(operacion, *args):
     resultado = operacion(*args)
     print(resultado)
     fin = time.time()
-    return fin - inicio
+    return round(fin - inicio,3)
 
 # Definir las dimensiones iniciales y finales
 dimension_inicial = 10000
