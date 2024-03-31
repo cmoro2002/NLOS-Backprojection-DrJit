@@ -18,7 +18,7 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-from drjit.llvm import Float, Int, Array3f, UInt32, Loop
+from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt
 
 from typing import List
 import matplotlib.pyplot as plt
@@ -29,30 +29,69 @@ from TransientVoxelization import initTransientImage, parseArgsIntoParams
 from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 
+# def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
+#     voxel = Array3f([fx, fy, fz])
+#     altura = transient_images[0].height
+#     intensities = dr.zeros(Float,altura)
+
+#     for transient_image in transient_images:
+
+#         # Construir un vector con todos los valores desde 1 hasta la altura de la imagen
+#         alturas = np.arange(1, transient_image.height)
+#         result = transient_image.getPointsForCoord(alturas)
+
+#         for h in range(transient_image.height):
+
+#             # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
+#             wall_point = transient_image.getPointForCoord(h)
+
+#             # Calcular el tiempo
+#             laser = transient_image.getLaser()
+            
+#             # Calcular la distancia entre el láser y el voxel
+#             laser_voxel_distance = dr.sqrt(np.sum(np.square(laser - voxel)))
+            
+#             # Calcular la distancia entre el voxel y los puntos de la pared
+#             voxel_wall_distance = dr.sqrt(np.sum(np.square(voxel - wall_point)))
+
+#             print(f"Distancia entre láser y voxel: {laser_voxel_distance}")
+#             print(f"Distancia entre voxel y punto de la pared: {voxel_wall_distance}")
+            
+#             time =  laser_voxel_distance + voxel_wall_distance
+                
+#             # Sumar la intensidad correspondiente al tiempo
+#             valor = transient_image.getIntensityForTime(h, time)
+
+#             intensities[h] = valor
+
+#     return dr.sum(intensities)
+
 def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
     voxel = Array3f([fx, fy, fz])
     altura = transient_images[0].height
     intensities = dr.zeros(Float,altura)
 
     for transient_image in transient_images:
-        for h in range(transient_image.height):
+        alturas = np.arange(1, transient_image.height)
+        # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
+        wall_points = transient_image.getPointsForCoord(alturas)
 
-            # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
-            wall_point = transient_image.getPointForCoord(h)
+        # Calcular el tiempo
+        laser = transient_image.getLaser()  # Suponiendo que este es un vector
 
-            # Calcular el tiempo
-            time = (dr.sqrt(np.sum(np.square(transient_image.getLaser() - voxel))) +
-                dr.sqrt(np.sum(np.square(voxel - wall_point))))
+        # Calcular la distancia entre el láser y el voxel
+        laser_voxel_distance = np.sqrt(np.sum(np.square(laser - voxel)))
 
-            # Sumar la intensidad correspondiente al tiempo
-            valor = transient_image.getIntensityForTime(h, time)
+        # Calcular la distancia entre el voxel y los puntos de la pared
+        voxel_wall_distance = np.sqrt(np.sum(np.square(voxel - wall_points), axis=1))
 
-            intensities[h] = valor
+        # Sumar las dos distancias para obtener el tiempo
+        times = laser_voxel_distance + voxel_wall_distance
 
+        # Sumar la intensidad correspondiente al tiempo
+        intensities = transient_image.getIntensitiesForTime(alturas, times)
 
-    dr.eval(intensities)
     return dr.sum(intensities)
-
 
 def backprojection(params: TransientVoxelizationParams):
 
@@ -72,27 +111,29 @@ def backprojection(params: TransientVoxelizationParams):
     results = np.zeros((resolution, resolution, resolution))
 
     # for z in range(num_images):
-    for z in range(1):
-        # Para cada x e y de cada imagen 
-        for y in range(resolution):
-            start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
-            for x in range(resolution):
-                start_time_x = time.time()  # Registrar el tiempo de inicio de la iteración
+    # Para z = 1
+    # for z in range(1):
+    z = 1
+    # Para cada x e y de cada imagen 
+    for y in range(resolution):
+        start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
+        for x in range(resolution):
+            start_time_x = time.time()  # Registrar el tiempo de inicio de la iteración
 
-                fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
-                fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
-                fz = bounds.zi + ((z + 0.5) / resolution) * bounds.sz
+            fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
+            fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
+            fz = bounds.zi + ((z + 0.5) / resolution) * bounds.sz
 
-                # Almacenar la suma de los resultados
-                results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
+            # Almacenar la suma de los resultados
+            results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
 
-                end_time_x = time.time()  # Registrar el tiempo de finalización de la iteración
-                elapsed_time = end_time_x - start_time_x  # Calcular el tiempo transcurrido en la iteración
-                print(f"Iteración (x={x}, y={y}, z={z}) tarda {elapsed_time} segundos")
-            end_time_y = time.time()  # Registrar el tiempo de finalización de la iteración
-            elapsed_time = end_time_y - start_time_y 
-            print(f"Iteración (y={y}, z={z}) tarda {elapsed_time} segundos")
-        print(f"Imagen {z} procesada")
+            end_time_x = time.time()  # Registrar el tiempo de finalización de la iteración
+            elapsed_time = end_time_x - start_time_x  # Calcular el tiempo transcurrido en la iteración
+            # print(f"Iteración (x={x}, y={y}, z={z}) tarda {elapsed_time} segundos")
+        end_time_y = time.time()  # Registrar el tiempo de finalización de la iteración
+        elapsed_time = end_time_y - start_time_y 
+        print(f"Iteración (y={y}, z={z}) tarda {elapsed_time} segundos")
+    print(f"Imagen {z} procesada")
 
     # Guardar los resultados en un fichero:
     print(f"Guardando resultados en {folder_name}_results")
@@ -102,6 +143,9 @@ def backprojection(params: TransientVoxelizationParams):
     plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.show()
+    
+    plt.savefig('resultado_visualizacion.png')  # Puedes especificar el nombre del archivo y la extensión que desees
+
     
     print(f"Proceso de backprojection finalizado")
 

@@ -4,53 +4,31 @@ import time
 
 import drjit as dr
 
-def matriz_multiplicacion(matriz_a, matriz_b, resultado, inicio_fila, fin_fila):
-    for i in range(inicio_fila, fin_fila):
-        for j in range(matriz_b.shape[1]):
-            resultado[i][j] = np.sum(matriz_a[i,:] * matriz_b[:,j])
+from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt, Array2f
 
-def multiplicacion_sin_hilos(matriz_a, matriz_b):
-    resultado = np.zeros((matriz_a.shape[0], matriz_b.shape[1]))
-    matriz_multiplicacion(matriz_a, matriz_b, resultado, 0, matriz_a.shape[0])
-    return resultado
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def foo(self):
+        return self.x * self.y
 
-def multiplicacion_con_hilos(matriz_a, matriz_b, num_hilos):
-    num_filas_por_hilo = matriz_a.shape[0] // num_hilos
-    hilos = []
-    resultado = np.zeros((matriz_a.shape[0], matriz_b.shape[1]))
+# Creamos algunas instancias de Point
+points = [Point(1, 2), Point(3, 4), Point(5, 6)]
 
-    for i in range(num_hilos):
-        inicio_fila = i * num_filas_por_hilo
-        fin_fila = inicio_fila + num_filas_por_hilo
-        if i == num_hilos - 1:
-            fin_fila = matriz_a.shape[0]
-        hilo = threading.Thread(target=matriz_multiplicacion, args=(matriz_a, matriz_b, resultado, inicio_fila, fin_fila))
-        hilos.append(hilo)
-        hilo.start()
+# Supongamos que tenemos una matriz de punteros a estas instancias (esta parte depende de cómo se implementa el registro Dr.Jit)
+pointers = Array2f(points)
 
-    for hilo in hilos:
-        hilo.join()
+# Definimos la función que queremos despachar
+def func(self, arg):
+    v = self.foo()  # Llama al método foo() en cada instancia
+    return v + arg
 
-    return resultado
+# Supongamos que tenemos un argumento para pasar a la función
+arg = 10
 
-# Definir el tamaño de las matrices
-tamano_matriz = 3000
+# Llamamos a drjit.dispatch() para ejecutar la función en cada instancia de Point
+result = dr.dispatch(pointers, func, arg)
 
-# Generar matrices aleatorias
-matriz_a = np.random.rand(tamano_matriz, tamano_matriz)
-matriz_b = np.random.rand(tamano_matriz, tamano_matriz)
-
-# Multiplicación sin hilos
-inicio_sin_hilos = time.time()
-resultado_sin_hilos = multiplicacion_sin_hilos(matriz_a, matriz_b)
-fin_sin_hilos = time.time()
-tiempo_sin_hilos = fin_sin_hilos - inicio_sin_hilos
-print("Tiempo sin hilos:", tiempo_sin_hilos)
-
-# Multiplicación con hilos (2 hilos)
-num_hilos = 8
-inicio_con_hilos = time.time()
-resultado_con_hilos = multiplicacion_con_hilos(matriz_a, matriz_b, num_hilos)
-fin_con_hilos = time.time()
-tiempo_con_hilos = fin_con_hilos - inicio_con_hilos
-print("Tiempo con", num_hilos, "hilo(s):", tiempo_con_hilos)
+print(result)
