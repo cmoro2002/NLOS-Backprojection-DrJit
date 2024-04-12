@@ -76,6 +76,8 @@ class TransientImage:
         # Filtrar los índices que están fuera de los límites de la imagen
         x = np.clip(x, 0, self.width - 1)
 
+        print(f"Índices de las coordenadas x: {x}")
+
         # x contiene los índices de las coordenadas x para todos los tiempos, y contiene las coordenadas y
         # Calcular las posiciones aplanadas correspondientes a las coordenadas x e y
         posiciones = calcular_posiciones_aplanadas(x,y, (self.width, self.height, self.channels))
@@ -83,15 +85,6 @@ class TransientImage:
         # Obtener las intensidades correspondientes a los índices calculados
         # intensities = self.data[posiciones]
         intensities = dr.gather(Float, self.data, posiciones)
-        return intensities
-
-    # Devuelve todas las intensidades de la imagen
-    def getAllIntensities(self) -> Float:
-        intensities = []
-        for y in range(self.height):
-            for x in range(self.width):
-                intensity = self.getIntensityForTime(y, self.calculateTimeForCoord(x, y))
-                intensities.append(intensity)
         return intensities
 
     # dr.fma(offset, self.wallDirection, self.point_wall_i)

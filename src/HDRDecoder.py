@@ -12,6 +12,8 @@ def decodeHDRFile(file_name: str):
     # Leer la imagen HDR
     img = cv2.imread(file_name, flags=cv2.IMREAD_ANYDEPTH)
 
+    print(img.shape)
+
     tensor = TensorXf(img)
 
     # Definir los parametros de la imagen

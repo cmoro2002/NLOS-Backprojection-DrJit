@@ -75,7 +75,7 @@ def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images
         alturas = np.arange(1, transient_image.height)
         # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
         wall_points = transient_image.getPointsForCoord(alturas)
-
+       
         # Calcular el tiempo
         laser = transient_image.getLaser()  # Suponiendo que este es un vector
 
@@ -101,24 +101,18 @@ def backprojection(params: TransientVoxelizationParams):
     folder_name = params.inputFolder
     print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
-    #TODO: Parametros ORTHO_OFFSET x y z
-    bounds = BoxBounds(0, 0, 0, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
+    bounds = BoxBounds(params.ORTHO_OFFSETX, params.ORTHO_OFFSETY, params.ORTHO_OFFSETZ, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
 
-    num_images = len(transient_images)
     resolution = bounds.resolution
 
     print(f"Resolución: {resolution}")
     results = np.zeros((resolution, resolution, resolution))
 
-    # for z in range(num_images):
-    # Para z = 1
-    # for z in range(1):
-    z = 1
-    # Para cada x e y de cada imagen 
+    # for z in range(resolution):
+    z = 0
     for y in range(resolution):
         start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
         for x in range(resolution):
-            start_time_x = time.time()  # Registrar el tiempo de inicio de la iteración
 
             fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
             fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
@@ -127,9 +121,6 @@ def backprojection(params: TransientVoxelizationParams):
             # Almacenar la suma de los resultados
             results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
 
-            end_time_x = time.time()  # Registrar el tiempo de finalización de la iteración
-            elapsed_time = end_time_x - start_time_x  # Calcular el tiempo transcurrido en la iteración
-            # print(f"Iteración (x={x}, y={y}, z={z}) tarda {elapsed_time} segundos")
         end_time_y = time.time()  # Registrar el tiempo de finalización de la iteración
         elapsed_time = end_time_y - start_time_y 
         print(f"Iteración (y={y}, z={z}) tarda {elapsed_time} segundos")

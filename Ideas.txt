@@ -1,0 +1,3 @@
+Backprojection - InitTransientImages, la lista de imagenes puede ser de drjit 
+Mirar si StreakLaser se usa para algo por que no lo defino bien en TransientVoxelization - initTransientImage
+La lectura de transient images se hace rara teniendo enn cuenta timeScale, intensityUnit, customWallPoints

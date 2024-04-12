@@ -26,11 +26,11 @@ class TransientVoxelizationParams:
         # Ortho matrix size
         self.orthoMatrix = None
         self.voxelSize = 0
-        self.ORTHO_OFFSETX = -0.55
+        self.ORTHO_OFFSETX = -0.1
         self.ORTHO_SIZEX = 0.6
-        self.ORTHO_OFFSETY = -0.3
+        self.ORTHO_OFFSETY = -0.35
         self.ORTHO_SIZEY = 0.6
-        self.ORTHO_OFFSETZ = 1
+        self.ORTHO_OFFSETZ = 0.9
         self.ORTHO_SIZEZ = 0.6
 
         # Geometry config
