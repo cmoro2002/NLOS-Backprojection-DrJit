@@ -35,16 +35,16 @@ def calcular_posiciones_aplanadas(x: np.ndarray, y: np.ndarray, forma: tuple) ->
     return x * N * P + y * P
 
 class TransientImage:
-    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, intensity_multiplier_unit: Float, data: TensorXf, max_value: Float, min_value: Float):
+    def __init__(self, width: Int, height: Int, channels: Int, time_per_coord: Float, intensity_multiplier_unit: Float, data: np.ndarray, max_value: Float, min_value: Float):
         self.width = width
         self.height = height
         self.channels = channels
         self.time_per_coord = time_per_coord
         self.intensity_multiplier_unit = intensity_multiplier_unit
         if data is not None:
-            self.data = data.array
-        else:
-            self.data = dr.zeros(Array3f, shape=(height, width, channels))
+            self.data = data
+        # else:
+            # self.data = dr.zeros(Array3f, shape=(height, width, channels))
         self.maxValue = max_value
         self.minValue = min_value
         self.laserHitTime = 0
@@ -65,42 +65,41 @@ class TransientImage:
         if x >= self.width or x < 0:
             return 0
         
-        # return self.data[x, y, 0]
-        return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
+        # print(f"Índice de la coordenada x: {x}")
+        
+        return self.data[x, y, 0]
+        # return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
     
     # Devuelve el tiempo correspondiente a las coordenadas y sus tiempos
     def getIntensitiesForTime(self, y: np.ndarray, times: np.ndarray) -> np.ndarray:
         # Calcular los índices de las coordenadas x para todos los tiempos
+
         x = np.array(((times + self.laserHitTime + self.wallCameraDilation[y]) / self.time_per_coord), dtype=int)
 
         # Filtrar los índices que están fuera de los límites de la imagen
         x = np.clip(x, 0, self.width - 1)
 
-        print(f"Índices de las coordenadas x: {x}")
-
-        # x contiene los índices de las coordenadas x para todos los tiempos, y contiene las coordenadas y
-        # Calcular las posiciones aplanadas correspondientes a las coordenadas x e y
-        posiciones = calcular_posiciones_aplanadas(x,y, (self.width, self.height, self.channels))
-
+        return self.data[y, x, 0]
         # Obtener las intensidades correspondientes a los índices calculados
         # intensities = self.data[posiciones]
-        intensities = dr.gather(Float, self.data, posiciones)
-        return intensities
+        # intensities = dr.gather(Float, self.data, posiciones)
+        # return intensities
 
     # dr.fma(offset, self.wallDirection, self.point_wall_i)
 
     # Devuelve el punto correspondiente a la coordenada y
     def getPointForCoord(self, y: int, aux=None):     
         if aux is None:
-            aux = dr.zeros(Array3f, 1)  # Inicializa un vector auxiliar si no se proporciona uno
+            aux = np.zeros(3, dtype=float)
+            # aux = dr.zeros(Array3f, 1)  # Inicializa un vector auxiliar si no se proporciona uno
 
-        # aux[0] = self.point_wall_i[0] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[0])
-        # aux[1] = self.point_wall_i[1] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[1])
-        # aux[2] = self.point_wall_i[2] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[2])
-
-        ratio = float(y) / self.height
-        offset = ratio * self.wallViewWidth + self.pxHalfWidth
-        return offset * self.wallDirection + self.point_wall_i
+        aux[0] = self.point_wall_i[0] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[0])
+        aux[1] = self.point_wall_i[1] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[1])
+        aux[2] = self.point_wall_i[2] + (((float(y) / self.height) * self.wallViewWidth + self.pxHalfWidth) * self.wallDirection[2])
+        return aux
+        # ratio = float(y) / self.height
+        # offset = ratio * self.wallViewWidth + self.pxHalfWidth
+        # return offset * self.wallDirection + self.point_wall_i
         
     # Devuelve los puntos correspondientes a las coordenadas y
     def getPointsForCoord(self, y: np.ndarray, aux=None):

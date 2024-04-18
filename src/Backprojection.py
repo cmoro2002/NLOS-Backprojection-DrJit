@@ -6,7 +6,7 @@ Fecha de creación: 04/02/2024
 Última modificación: 29/04/2024
 
 Ejecución: python3 Backprojection.py -folder <nombre_carpeta> -voxel_resolution <resolución_voxel> -max_ortho_size <tamaño_ortho>
-    $ python3 Backprojection.py -folder letter_ht_90 -voxelRes 256 -lasers 0.2 0 0 -laser_origin 0.2 0 1 -cam 0.2 0 1 -lookTo 0.2 0 0 -fov 90 -t_delta 0.005 -ortho -0.1 -0.35 0.9 0.7 
+    python3 Backprojection.py -folder letter_ht_90 -voxelRes 256 -lasers 0.2 0 0 -laser_origin 0.2 0 1 -cam 0.2 0 1 -lookTo 0.2 0 0 -fov 90 -t_delta 0.005 -ortho -0.1 -0.35 0.9 0.7 
 """
 
 
@@ -45,6 +45,8 @@ from TransientVoxelizationParams import TransientVoxelizationParams
 #             # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
 #             wall_point = transient_image.getPointForCoord(h)
 
+#             # print(f"Wall point: {wall_point}")
+
 #             # Calcular el tiempo
 #             laser = transient_image.getLaser()
             
@@ -53,9 +55,6 @@ from TransientVoxelizationParams import TransientVoxelizationParams
             
 #             # Calcular la distancia entre el voxel y los puntos de la pared
 #             voxel_wall_distance = dr.sqrt(np.sum(np.square(voxel - wall_point)))
-
-#             print(f"Distancia entre láser y voxel: {laser_voxel_distance}")
-#             print(f"Distancia entre voxel y punto de la pared: {voxel_wall_distance}")
             
 #             time =  laser_voxel_distance + voxel_wall_distance
                 
@@ -69,13 +68,13 @@ from TransientVoxelizationParams import TransientVoxelizationParams
 def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
     voxel = Array3f([fx, fy, fz])
     altura = transient_images[0].height
-    intensities = dr.zeros(Float,altura)
+    # intensities = dr.zeros(Float,altura)
+    intensities = np.zeros(altura)
 
     for transient_image in transient_images:
-        alturas = np.arange(1, transient_image.height)
+        alturas = np.arange(0, transient_image.height - 1)
         # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
         wall_points = transient_image.getPointsForCoord(alturas)
-       
         # Calcular el tiempo
         laser = transient_image.getLaser()  # Suponiendo que este es un vector
 
@@ -109,7 +108,7 @@ def backprojection(params: TransientVoxelizationParams):
     results = np.zeros((resolution, resolution, resolution))
 
     # for z in range(resolution):
-    z = 0
+    z = 1
     for y in range(resolution):
         start_time_y = time.time()  # Registrar el tiempo de inicio de la iteración
         for x in range(resolution):
@@ -130,7 +129,7 @@ def backprojection(params: TransientVoxelizationParams):
     print(f"Guardando resultados en {folder_name}_results")
     np.save(f"{folder_name}_results", results)
 
-    flattened_results = results[:,:,0]
+    flattened_results = results[:,:,z]
     plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.show()
@@ -159,7 +158,7 @@ def initTransientImages(params: TransientVoxelizationParams):
         if file.endswith(('.hdr')):
             file_route = params.inputFolder + "/" + file
             print(f"Reading file: {file_route}")
-            transient_image = initTransientImage(params, file_route)
+            transient_image = initTransientImage(params, file_route, count)
             
             # Agregar la instancia de TransientImage a la lista
             transient_images.append(transient_image)
