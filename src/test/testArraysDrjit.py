@@ -25,8 +25,8 @@ def medir_tiempo(operacion, *args):
     return round(fin - inicio,3)
 
 # Definir las dimensiones iniciales y finales
-dimension_inicial = 10000
-dimension_final = 500000000
+dimension_inicial = 100000
+dimension_final = 204800050
 multiplicador = 2
 
 # Archivo para escribir los resultados

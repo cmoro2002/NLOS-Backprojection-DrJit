@@ -4,7 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-results = np.load(f"letter_ht_90_results.npy")
+results = np.load(f"results/letter_ht_90_results.npy")
 
 flattened_results = results[:,:,1]
 plt.imshow(flattened_results, cmap='hot', interpolation='nearest')

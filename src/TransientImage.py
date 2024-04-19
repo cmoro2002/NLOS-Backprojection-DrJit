@@ -67,7 +67,7 @@ class TransientImage:
         
         # print(f"Índice de la coordenada x: {x}")
         
-        return self.data[x, y, 0]
+        return self.data[y, x, 0]
         # return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
     
     # Devuelve el tiempo correspondiente a las coordenadas y sus tiempos

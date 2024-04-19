@@ -81,6 +81,8 @@ class TransientVoxelizationParams:
         self.CUSTOM_TRANSIENT_IMAGES = None
         self.AUTO_MANAGE_DISPLAY = False
 
+        self.OPTIM = False
+
     def setOrthoSize(self, size):
         self.ORTHO_SIZEX = self.ORTHO_SIZEY = self.ORTHO_SIZEZ = size
 
