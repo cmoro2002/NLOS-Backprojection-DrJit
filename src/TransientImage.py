@@ -78,7 +78,9 @@ class TransientImage:
 
         # Filtrar los índices que están fuera de los límites de la imagen
         x = np.clip(x, 0, self.width - 1)
+        # print(self.data[y, x, 0])
 
+        # Mostrar los valores de x e y
         return self.data[y, x, 0]
         # Obtener las intensidades correspondientes a los índices calculados
         # intensities = self.data[posiciones]
