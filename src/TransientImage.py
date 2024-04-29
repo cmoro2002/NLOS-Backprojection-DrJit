@@ -104,21 +104,23 @@ class TransientImage:
         # return offset * self.wallDirection + self.point_wall_i
         
     # Devuelve los puntos correspondientes a las coordenadas y
-    def getPointsForCoord(self, y: np.ndarray, aux=None):
-        if aux is None:
-            # aux = dr.zeros(Array3f, len(y))  # Inicializa un vector auxiliar si no se proporciona uno
-            aux = np.zeros((len(y), 3), dtype=float)
+    def getPointsForCoord(self, y: np.ndarray, offsetCalc: np.ndarray) -> np.ndarray:
+        aux = np.zeros((len(y), 3), dtype=float)
 
-        # Dividir todas las componentes de y por la altura de la imagen
-        ratio = y / self.height
-        offset = ratio * self.wallViewWidth + self.pxHalfWidth
-        
-        # for i in range(3):
-        #     aux[:, i] = offset * self.wallDirection[i] + self.point_wall_i[i]
+        # Si no estaba optimizado el calculo del offset
+        if offsetCalc is None:
+            # Dividir todas las componentes de y por la altura de la imagen
+            ratio = y / self.height
+            offset = ratio * self.wallViewWidth + self.pxHalfWidth
+            
+            offsetCalc[:,0] = offset * self.wallDirection[0]
+            offsetCalc[:,1] = offset * self.wallDirection[1]
+            offsetCalc[:,2] = offset * self.wallDirection[2]
 
-        aux[:, 0] = offset * self.wallDirection[0] + self.point_wall_i[0]
-        aux[:, 1] = offset * self.wallDirection[1] + self.point_wall_i[1]
-        aux[:, 2] = offset * self.wallDirection[2] + self.point_wall_i[2]
+        # Calcular los puntos de la pared
+        aux[:, 0] = offsetCalc[:, 0] + self.point_wall_i[0]
+        aux[:, 1] = offsetCalc[:, 1] + self.point_wall_i[1]
+        aux[:, 2] = offsetCalc[: ,2] + self.point_wall_i[2]
 
         return aux 
     

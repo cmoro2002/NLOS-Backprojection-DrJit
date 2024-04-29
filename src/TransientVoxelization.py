@@ -30,6 +30,7 @@ def parseArgsIntoParams(params):
     parser.add_argument("-lasers", nargs=3, type=float, help="Componentes de los láseres")
     parser.add_argument("-laser_origin", nargs=3, type=float, help="Componentes del origen del láser")
     parser.add_argument("-Optim", help="Optimizar el código")
+    parser.add_argument("-resultsRoute", type=str, help="Nombre del archivo donde guardar los resultados")
     parsed_args = parser.parse_args()
 
     # Asignar los argumentos a los parámetros
@@ -61,6 +62,9 @@ def parseArgsIntoParams(params):
         params.laserOrigin = np.array(parsed_args.laser_origin)
     if parsed_args.Optim is not None:
         params.OPTIM = True
+    if parsed_args.resultsRoute is not None:
+        params.resultsRoute = parsed_args.resultsRoute
+
 
 
 def setParamsForCamera(params: TransientVoxelizationParams, transient_image: TransientImage, streak: int):

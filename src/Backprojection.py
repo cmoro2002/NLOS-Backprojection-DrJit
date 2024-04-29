@@ -19,6 +19,7 @@ import drjit as dr
 
 # Imports de drjit
 from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt
+import threading
 
 from typing import List
 import matplotlib.pyplot as plt
@@ -30,114 +31,109 @@ from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 from FilterResults import apply_filters
 
-def sumTransientIntensitiesFor(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
+def sumTransientIntensitiesFor(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
     voxel = Array3f([fx, fy, fz])
-    altura = transient_images[0].height
     intensities = 0
 
     for transient_image in transient_images:
         for h in range(transient_image.height):
 
-            # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
+            # Obtener el punto de la pared
             wall_point = transient_image.getPointForCoord(h)
 
-            # Calcular el tiempo
+            # Obtener la posicion del laser
             laser = transient_image.getLaser()
             
-            # Calcular la distancia entre el láser y el voxel
-            laser_voxel_distance = np.sqrt(np.sum(np.square(laser - voxel)))
+            # Calcular la distancia r2 (pared-voxel)
+            r2 = np.sqrt(np.sum(np.square(laser - voxel)))
             
-            # Calcular la distancia entre el voxel y los puntos de la pared
-            voxel_wall_distance = np.sqrt(np.sum(np.square(voxel - wall_point)))
+            # Calcular la distancia r3 (voxel-puntos de la pared)
+            r3 = np.sqrt(np.sum(np.square(voxel - wall_point)))
             
-            time =  laser_voxel_distance + voxel_wall_distance
+            time =  r2 + r3
                 
             # Sumar la intensidad correspondiente al tiempo
             intensities += transient_image.getIntensityForTime(h, time)
 
     return intensities
 
-def sumTransientIntensitiesForOptim1(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
-    voxel = Array3f([fx, fy, fz])
-    altura = transient_images[0].height
-    # intensities = dr.zeros(Float,altura)
-    intensities = np.zeros(altura)
-
-    alturas = np.arange(0, transient_images[0].height)
-    laser = transient_images[0].getLaser()
-
-    # Calcular la distancia entre el láser y el voxel
-    # laser_voxel_distance = np.sqrt(np.sum(np.square(laser - voxel)))
-    laser_voxel_distance = np.linalg.norm(laser - voxel)
-
-    for transient_image in transient_images:
-        # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
-        wall_points = transient_image.getPointsForCoord(alturas)
-        # Calcular el tiempo
-
-        # Calcular la distancia entre el voxel y los puntos de la pared
-        # voxel_wall_distance = np.sqrt(np.sum(np.square(voxel - wall_points), axis=1))
-        voxel_wall_distance = np.linalg.norm(voxel - wall_points, axis=1)
-
-        # Sumar las dos distancias para obtener el tiempo
-        times = laser_voxel_distance + voxel_wall_distance
-
-        # Sumar la intensidad correspondiente al tiempo
-        intensities += transient_image.getIntensitiesForTime(alturas, times)
-
-    return np.sum(intensities)
-
-# def sumTransientIntensitiesForOptim(fx: Float, fy: Float, fz: Float, transient_images: List[TransientImage]) -> Float:
-#     voxel = np.array([fx, fy, fz])
+# def sumTransientIntensitiesForOptim1(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
+#     voxel = Array3f([fx, fy, fz])
 #     altura = transient_images[0].height
+#     # intensities = dr.zeros(Float,altura)
+#     intensities = np.zeros(altura)
 
-#     # Obtener las alturas y la distancia láser-voxel
-#     alturas = np.arange(0, altura)
-#     laser_voxel_distance = np.sqrt(np.sum((voxel - transient_images[0].laser)**2))
+#     alturas = np.arange(0, transient_images[0].height)
+#     laser = transient_images[0].getLaser()
 
-#     # Calcular las distancias voxel-pared para todas las imágenes y alturas
-#     voxel_wall_distances = []
+#     # Calcular la distancia entre el láser y el voxel
+#     # laser_voxel_distance = np.sqrt(np.sum(np.square(laser - voxel)))
+#     laser_voxel_distance = np.linalg.norm(laser - voxel)
+
 #     for transient_image in transient_images:
+#         # Obtener el punto de la pared (no estás utilizando esto en el cálculo de intensidades)
 #         wall_points = transient_image.getPointsForCoord(alturas)
-#         voxel_wall_distances.append(np.sqrt(np.sum((voxel - wall_points)**2, axis=1)))
+#         # Calcular el tiempo
 
-#     # Apilar las distancias voxel-pared en un solo array
-#     voxel_wall_distances = np.stack(voxel_wall_distances, axis=0)
+#         # Calcular la distancia entre el voxel y los puntos de la pared
+#         # voxel_wall_distance = np.sqrt(np.sum(np.square(voxel - wall_points), axis=1))
+#         voxel_wall_distance = np.linalg.norm(voxel - wall_points, axis=1)
 
-#     # Calcular los tiempos y sumar las intensidades
-#     times = laser_voxel_distance + voxel_wall_distances
-#     intensities = transient_images[0].getIntensitiesForTime(alturas, times)
+#         # Sumar las dos distancias para obtener el tiempo
+#         times = laser_voxel_distance + voxel_wall_distance
+
+#         # Sumar la intensidad correspondiente al tiempo
+#         intensities += transient_image.getIntensitiesForTime(alturas, times)
 
 #     return np.sum(intensities)
 
-def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
+def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_images: List[TransientImage], offset: np.ndarray) -> float:
     voxel = np.array([fx, fy, fz])
     altura = transient_images[0].height
 
     # Obtener las alturas y la distancia láser-voxel
     alturas = np.arange(0, altura)
-    laser_voxel_distance = np.sqrt(np.sum(np.square(voxel - transient_images[0].laser)))
+
+    r2 = np.sqrt(np.sum(np.square(voxel - transient_images[0].laser)))
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
-    voxel_wall_distances = []
+    r3 = []
     for transient_image in transient_images:
-        wall_points = transient_image.getPointsForCoord(alturas)
-        voxel_wall_distances.append(np.sqrt(np.sum((voxel - wall_points)**2, axis=1)))
-
+        wall_points = transient_image.getPointsForCoord(alturas, offset)
+        r3.append(np.sqrt(np.sum((voxel - wall_points)**2, axis=1)))
+    
     # Apilar las distancias voxel-pared en un solo array
-    voxel_wall_distances = np.stack(voxel_wall_distances, axis=0)
+    # r3 = np.stack(r3, axis=0)
 
     # Calcular los tiempos y sumar las intensidades
-    times = laser_voxel_distance + voxel_wall_distances
+    times = r2 + r3
     intensities = []
     for transient_image, tiempos in zip(transient_images, times):
         intensities.append(transient_image.getIntensitiesForTime(alturas, tiempos))
 
     # Apilar las intensidades de todas las imágenes en un solo array
-    intensities = np.stack(intensities, axis=0)
+    # intensities = np.stack(intensities, axis=0)
 
     return np.sum(intensities)
 
+# Optimización que se puede aplicar en algunos casos
+def getOffset(transient_image: TransientImage):
+    # Obtener las alturas de la imagen
+    alturas = np.arange(0, transient_image.height)
+
+    aux = np.zeros((len(alturas), 3), dtype=float)
+
+    # Dividir todas las componentes de y por la altura de la imagen
+    ratio = alturas / transient_image.height
+    offset = ratio * transient_image.wallViewWidth + transient_image.pxHalfWidth
+    
+    aux[:, 0] = offset * transient_image.wallDirection[0] 
+    aux[:, 1] = offset * transient_image.wallDirection[1]
+    aux[:, 2] = offset * transient_image.wallDirection[2]
+
+    # IDEA: Precalcular todos los wallpoints de cada transient image y almacenarlos en un array
+
+    return aux
 
 def backprojection(params: TransientVoxelizationParams):
 
@@ -158,6 +154,13 @@ def backprojection(params: TransientVoxelizationParams):
 
     start_time = time.time()
 
+    offset = None
+
+    # Calcular el offset de la caja de proyección si se puede
+    if params.OPTIM:
+        offset = getOffset(transient_images[0])
+        print(f"Offset calculado")
+    
     for z in range(resolution):
         start_time_z = time.time()  # Registrar el tiempo de inicio de la iteración
         for y in range(resolution):
@@ -169,24 +172,25 @@ def backprojection(params: TransientVoxelizationParams):
 
                 if params.OPTIM:
                     # Almacenar la suma de los resultados
-                    results[x, y, z] += sumTransientIntensitiesForOptim(fx, fy, fz, transient_images)
+                    results[y, x, z] = sumTransientIntensitiesForOptim(fx, fy, fz, transient_images, offset)
                 else:
                     # Almacenar la suma de los resultados
-                    results[x, y, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
-
+                    results[y, x, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
         end_time_z = time.time()  # Registrar el tiempo de finalización de la iteración
         elapsed_time = end_time_z - start_time_z 
         print(f"Iteración z={z} tarda {elapsed_time} segundos")
-    print(f"Imagen {z} procesada")
 
+    
+    # results = vectorize_transient_intensities(bounds, resolution, transient_images)
+
+
+    # Crear matrices de coordenadas voxel    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
     # Guardar los resultados en un fichero:
     print(f"Guardando resultados en results/results")
-    np.save(f"results/", results)
-
     FilterResults = apply_filters(resolution, results)
 
     # Visualizar los resultados
@@ -195,7 +199,8 @@ def backprojection(params: TransientVoxelizationParams):
     # flattened_results = results[:,:,z]
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
-    plt.savefig('result_image.png')  # Guardar la imagen como 'result_image.png'
+    # Guardar la imagen en results/params.resultsRoute
+    plt.savefig('results/' + params.resultsRoute + '.png') 
     plt.show()
     
     print(f"Proceso de backprojection finalizado")

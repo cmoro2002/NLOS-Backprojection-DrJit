@@ -82,6 +82,7 @@ class TransientVoxelizationParams:
         self.AUTO_MANAGE_DISPLAY = False
 
         self.OPTIM = False
+        self.resultsRoute = "resultado"
 
     def setOrthoSize(self, size):
         self.ORTHO_SIZEX = self.ORTHO_SIZEY = self.ORTHO_SIZEZ = size
