@@ -58,6 +58,10 @@ class TransientImage:
         self.laser = np.zeros(3, dtype=float)
         self.wallViewWidth = height
         self.pxHalfWidth = 0.5
+        self.wallPoints = None
+
+    def setWallPoints(self, wallPoints):
+        self.wallPoints = wallPoints
 
     # Devuelve la intensidad de la imagen en el punto (x, y)
     def getIntensityForTime(self, y: int, time: float) -> float:
@@ -104,12 +108,14 @@ class TransientImage:
         # return offset * self.wallDirection + self.point_wall_i
         
     # Devuelve los puntos correspondientes a las coordenadas y
-    def getPointsForCoord(self, y: np.ndarray, offsetCalc: np.ndarray) -> np.ndarray:
+    def getPointsForCoord(self, y: np.ndarray, offsetCalc: np.ndarray = None) -> np.ndarray:
         aux = np.zeros((len(y), 3), dtype=float)
 
         # Si no estaba optimizado el calculo del offset
         if offsetCalc is None:
-            # Dividir todas las componentes de y por la altura de la imagen
+            # Inicializar offsetCalc si es None
+            offsetCalc = np.zeros((len(y), 3), dtype=float)
+            # Dividir todas las componentes de y por la altura de la imagen
             ratio = y / self.height
             offset = ratio * self.wallViewWidth + self.pxHalfWidth
             
@@ -120,9 +126,9 @@ class TransientImage:
         # Calcular los puntos de la pared
         aux[:, 0] = offsetCalc[:, 0] + self.point_wall_i[0]
         aux[:, 1] = offsetCalc[:, 1] + self.point_wall_i[1]
-        aux[:, 2] = offsetCalc[: ,2] + self.point_wall_i[2]
+        aux[:, 2] = offsetCalc[:, 2] + self.point_wall_i[2]
 
-        return aux 
+        return aux
     
     # Método para obtener el valor del atributo laser
     def get_laser(self):
