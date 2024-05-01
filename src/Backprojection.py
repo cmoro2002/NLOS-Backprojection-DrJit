@@ -112,25 +112,6 @@ def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_i
 
     return np.sum(intensities)
 
-def sumTransientIntensitiesForOptim3(voxels: np.ndarray, transient_images: List[TransientImage]) -> float:
-    altura = transient_images[0].height
-    alturas = np.arange(0, altura)
-
-    # r2 (128 distancias)
-    r2 = np.sqrt(np.sum(np.square(voxels[:, np.newaxis] - transient_images[0].laser), axis=2))
-
-    # Calcular las distancias voxel-pared para todas las imágenes y alturas
-    r3 = np.stack([np.sqrt(np.sum(np.square(voxels[:, np.newaxis] - image.wallPoints), axis=2)) for image in transient_images])
-
-    # r3 (128 imagenes, 128 distancias cada una)
-
-    # Calcular los tiempos y sumar las intensidades
-    times = r2 + r3
-    intensities = np.array([image.getIntensitiesForTime(alturas, times[i]) for i, image in enumerate(transient_images)])
-
-    return np.sum(intensities, axis=0)
-
-
 def setWallPoints(transient_images: List[TransientImage]):
     alturas = np.arange(0, transient_images[0].height)
     aux = np.zeros((len(alturas), 3), dtype=float)
@@ -176,9 +157,6 @@ def backprojection(params: TransientVoxelizationParams):
     if params.OPTIM:
         setWallPoints(transient_images)
         print(f"WallPoints calculados")
-
-    # Definir vector de voxels
-    voxels = np.zeros((resolution, resolution, resolution, 3))
     
     for z in range(resolution):
         start_time_z = time.time()  # Registrar el tiempo de inicio de la iteración
@@ -188,10 +166,6 @@ def backprojection(params: TransientVoxelizationParams):
                 fx = bounds.xi + ((x + 0.5) / resolution) * bounds.sx
                 fy = bounds.yi + ((y + 0.5) / resolution) * bounds.sy
                 fz = bounds.zi + ((z + 0.5) / resolution) * bounds.sz
-
-                voxels[x, y, z] = np.array([fx, fy, fz])
-                
-    sumTransientIntensitiesForOptim3(voxels, transient_images)
 
                 if params.OPTIM:
                     # Almacenar la suma de los resultados
