@@ -110,10 +110,32 @@ def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_i
     for transient_image, tiempos in zip(transient_images, times):
         intensities.append(transient_image.getIntensitiesForTime(alturas, tiempos))
 
-    # Apilar las intensidades de todas las imágenes en un solo array
-    # intensities = np.stack(intensities, axis=0)
+    return np.sum(intensities)
+
+import numpy as np
+from typing import List
+
+def sumTransientIntensitiesForOptim2(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
+    voxels = np.array([fx, fy, fz])
+    altura = transient_images[0].height
+
+    # Obtener las alturas y la distancia láser-voxel
+    alturas = np.arange(0, altura)
+
+    # r2 (128 distancias)
+    r2 = np.sqrt(np.sum(np.square(voxels - transient_images[0].laser), axis=1))
+
+    # Calcular las distancias voxel-pared para todas las imágenes y alturas
+    r3 = np.array([np.sqrt(np.sum((voxels - ti.wallPoints)**2, axis=1)) for ti in transient_images])
+
+    # r3 (128 imagenes, 128 distancias cada una)
+
+    # Calcular los tiempos y sumar las intensidades
+    times = r2[:, np.newaxis] + r3
+    intensities = np.sum([ti.getIntensitiesForTime(alturas, tiempos) for ti, tiempos in zip(transient_images, times)], axis=0)
 
     return np.sum(intensities)
+
 
 def setWallPoints(transient_images: List[TransientImage]):
     alturas = np.arange(0, transient_images[0].height)
