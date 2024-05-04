@@ -3,6 +3,7 @@ import drjit as dr
 
 # from drjit.cuda import Float, UInt32
 from drjit.llvm import Float, Int, Array3f, Matrix3f, TensorXf
+from Tensor import Tensor2f
 
 def calcular_posicion_aplanada(coordenadas, forma):
     """
@@ -45,6 +46,8 @@ class TransientImage:
             self.data = data
         # else:
             # self.data = dr.zeros(Array3f, shape=(height, width, channels))
+        tensorAux = TensorXf(self.data)
+        self.tensor = Tensor2f(tensorAux.array, (height, width))
         self.maxValue = max_value
         self.minValue = min_value
         self.laserHitTime = 0
@@ -75,21 +78,17 @@ class TransientImage:
         # return self.data[calcular_posicion_aplanada((x, y, 0), (self.width, self.height, self.channels))]
     
     # Devuelve el tiempo correspondiente a las coordenadas y sus tiempos
-    def getIntensitiesForTime(self, y: np.ndarray, times: np.ndarray) -> np.ndarray:
+    def getIntensitiesForTime(self, y: np.ndarray, times: Float) -> Float:
         # Calcular los índices de las coordenadas x para todos los tiempos
-
-        x = np.array(((times + self.laserHitTime + self.wallCameraDilation[y]) / self.time_per_coord), dtype=int)
+        # TODO: wallCameraDilatation sea de drjit y acceder con scatter
+        x = Int(((times + self.laserHitTime + self.wallCameraDilation[y]) / self.time_per_coord))
 
         # Filtrar los índices que están fuera de los límites de la imagen
-        x = np.clip(x, 0, self.width - 1)
+        x = dr.clip(x, 0, self.width - 1)
         # print(self.data[y, x, 0])
 
         # Mostrar los valores de x e y
-        return self.data[y, x, 0]
-        # Obtener las intensidades correspondientes a los índices calculados
-        # intensities = self.data[posiciones]
-        # intensities = dr.gather(Float, self.data, posiciones)
-        # return intensities
+        return self.tensor.leer(y, x)
 
     # dr.fma(offset, self.wallDirection, self.point_wall_i)
 

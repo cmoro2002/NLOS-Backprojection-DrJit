@@ -18,7 +18,7 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt
+from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt, TensorXf
 import threading
 
 from typing import List
@@ -87,28 +87,31 @@ def sumTransientIntensitiesForOptim1(fx: float, fy: float, fz: float, transient_
 
     return np.sum(intensities)
 
-def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_images: List[TransientImage]) -> float:
-    voxel = np.array([fx, fy, fz])
+def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_images: List[TransientImage], wallPoints: Array3f, datos: Float, wallCameraDilations: Float) -> float:
+    
+    voxel = Array3f(fx, fy, fz)
     altura = transient_images[0].height
 
     # Obtener las alturas y la distancia láser-voxel
-    alturas = np.arange(0, altura)
+    alturas = dr.arange(Int,0, altura)
 
     # r2 (128 distancias)
-    r2 = np.linalg.norm(voxel - transient_images[0].laser)
+    r2 = dr.norm(voxel - transient_images[0].laser)
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
-    r3 = []
-    for transient_image in transient_images:
-        r3.append(np.linalg.norm(voxel - transient_image.wallPoints, axis=1))
-    
-    # r3 (128 imagenes, 128 distancias cada una)
+    r3 = dr.norm(voxel - wallPoints)
 
+    # r3 (128 imagenes, 128 distancias cada una)
     # Calcular los tiempos y sumar las intensidades
     times = r2 + r3
     intensities = []
-    for transient_image, tiempos in zip(transient_images, times):
-        intensities.append(transient_image.getIntensitiesForTime(alturas, tiempos))
+    i = 0
+    indices = dr.arange(Int, 0, altura)
+    # alturas2 = np.array(alturas)
+    for transient_image in transient_images:
+        # tiempos = dr.gather(Float, times, dr.arange(Int, i * altura, (i + 1) * altura))
+        intensities.append(transient_image.getIntensitiesForTime(alturas, dr.gather(Float, times, indices)))
+        # i += 1
 
     return np.sum(intensities)
 
@@ -124,6 +127,8 @@ def setWallPoints(transient_images: List[TransientImage]):
     aux[:, 1] = offset * transient_images[0].wallDirection[1]
     aux[:, 2] = offset * transient_images[0].wallDirection[2]
 
+    res = dr.zeros(Array3f, len(transient_images) * transient_images[0].height)
+    i = 0
     for transient_image in transient_images:
 
         wall_points = np.zeros((len(alturas), 3), dtype=float)
@@ -132,7 +137,14 @@ def setWallPoints(transient_images: List[TransientImage]):
         wall_points[:, 1] = aux[:, 1] + transient_image.point_wall_i[1]
         wall_points[:, 2] = aux[:, 2] + transient_image.point_wall_i[2]
 
-        transient_image.setWallPoints(wall_points)
+        DrwallPoints = Array3f(wall_points)
+
+        dr.scatter(res, DrwallPoints, dr.arange(Int, i * transient_images[0].height, (i + 1) * transient_images[0].height))
+        i += 1
+        wall_pointsDR = Array3f(wall_points)
+        transient_image.setWallPoints(wall_pointsDR)
+
+    return res
 
 def backprojection(params: TransientVoxelizationParams):
 
@@ -155,9 +167,16 @@ def backprojection(params: TransientVoxelizationParams):
 
     # Calcular los wallpoints de cada imagen 
     if params.OPTIM:
-        setWallPoints(transient_images)
+        wallPoints = setWallPoints(transient_images)
         print(f"WallPoints calculados")
-    
+        datos = dr.zeros(Float, transient_images[0].height * transient_images[0].width * len(transient_images))
+
+        wallCameraDilatations = dr.zeros(Float, transient_images[0].height * len(transient_images))
+        for i in range(len(transient_images)):
+            dr.scatter(datos, transient_images[i].tensor.data, dr.arange(Int, i * transient_images[0].height * transient_images[0].width, (i + 1) * transient_images[0].height * transient_images[0].width)) 
+            dr.scatter(wallCameraDilatations, transient_images[i].wallCameraDilation, dr.arange(Int, i * transient_images[0].height, (i + 1) * transient_images[0].height))
+        print(f"Datos de las imágenes almacenados")
+
     for z in range(resolution):
         start_time_z = time.time()  # Registrar el tiempo de inicio de la iteración
         for y in range(resolution):
@@ -169,7 +188,7 @@ def backprojection(params: TransientVoxelizationParams):
 
                 if params.OPTIM:
                     # Almacenar la suma de los resultados
-                    results[y, x, z] = sumTransientIntensitiesForOptim(fx, fy, fz, transient_images)
+                    results[y, x, z] = sumTransientIntensitiesForOptim(fx, fy, fz, transient_images, wallPoints, datos, wallCameraDilatations)
                 else:
                     # Almacenar la suma de los resultados
                     results[y, x, z] += sumTransientIntensitiesFor(fx, fy, fz, transient_images)
