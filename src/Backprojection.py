@@ -95,12 +95,12 @@ def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_i
     alturas = np.arange(0, altura)
 
     # r2 (128 distancias)
-    r2 = np.sqrt(np.sum(np.square(voxel - transient_images[0].laser)))
+    r2 = np.linalg.norm(voxel - transient_images[0].laser)
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
     r3 = []
     for transient_image in transient_images:
-        r3.append(np.sqrt(np.sum((voxel - transient_image.wallPoints)**2, axis=1)))
+        r3.append(np.linalg.norm(voxel - transient_image.wallPoints, axis=1))
     
     # r3 (128 imagenes, 128 distancias cada una)
 

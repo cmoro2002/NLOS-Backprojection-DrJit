@@ -83,6 +83,8 @@ class TransientVoxelizationParams:
 
         self.OPTIM = False
         self.resultsRoute = "resultado"
+        self.manual = True
+        self.dataset = "dataset/Z.hdf5"
 
     def setOrthoSize(self, size):
         self.ORTHO_SIZEX = self.ORTHO_SIZEY = self.ORTHO_SIZEZ = size

@@ -164,3 +164,4 @@ src/results/*
 FastBackprojection-1.0.3
 FastBackprojectionEjecutables
 results/*
+datasets/*
