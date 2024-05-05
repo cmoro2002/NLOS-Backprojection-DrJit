@@ -1,0 +1,11 @@
+Argumentos de línea de comandos leidos
+Se han encontrado 129 archivos en la carpeta src/letter_ht_90
+El archivo .DS_Store no es una imagen .hdr
+Se han leido un total de 128 de imagenes
+Empezando el proceso de backprojection optimizado para de la carpeta src/letter_ht_90
+WallPoints calculados
+Datos de las imágenes almacenados
+[8.754432201385498e-08, 1.7601996660232544e-07, 5.289912223815918e-07, 2.6635825634002686e-07, 4.4517219066619873e-07, .. 16374 skipped .., 8.903443813323975e-07, 3.241002559661865e-07, 4.842877388000488e-07, 4.0978193283081055e-07, 3.371387720108032e-07]
+8.754432201385498e-08
+3.371387720108032e-07
+YA

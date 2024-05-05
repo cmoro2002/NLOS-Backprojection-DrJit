@@ -110,12 +110,10 @@ def sumTransientIntensitiesForOptim(fx: float, fy: float, fz: float, transient_i
     times = r2 + r3
 
     x = Int((times + transient_images[0].laserHitTime + wallCameraDilations) / transient_images[0].time_per_coord)
-
     x = dr.clip(x, 0, transient_images[0].width - 1)
     x = x + indicesLectura
 
-
-    alturas = dr.repeat(alturas, len(transient_images))
+    alturas = dr.tile(alturas, len(transient_images))
 
     indices = calcularIndices(x, alturas, transient_images[0].width)
 
@@ -186,8 +184,10 @@ def backprojection(params: TransientVoxelizationParams):
         print(f"Datos de las imágenes almacenados")
 
         # Definir vector de lectura en datos
-        indices = dr.arange(Int, 0, transient_images[0].height)
+        indices = dr.arange(Int, 0, len(transient_images))
         indices = indices * (transient_images[0].width * transient_images[0].height)
+
+
         indices = dr.repeat(indices, len(transient_images))
 
     for z in range(resolution):
