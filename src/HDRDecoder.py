@@ -14,8 +14,8 @@ def decodeHDRFile(file_name: str):
 
     channels = img.shape[2] # Debería ser 3
     
-    # Me quedo solo con el canal 0
-    img = img[:, :, 0]
+    # Almacenar la media de los valores de los 3 canales
+    img = np.mean(img, axis=2)
 
     # Definir los parametros de la imagen
     width = img.shape[1]
