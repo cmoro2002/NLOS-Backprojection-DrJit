@@ -16,7 +16,5 @@ dataset="datasets/Z.hdf5"
 # Llamar al script Python con las variables como argumentos
 python3 src/Backprojection.py \
   -dataset  "$dataset" \
-  -folder "$folder" \
   -voxelRes "$voxelRes" \
-  -Optim true \
   -resultsRoute "$resultsRoute"

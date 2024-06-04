@@ -1,8 +1,5 @@
 from TransientImage import TransientImage
 from TransientVoxelizationParams import TransientVoxelizationParams
-from HDRDecoder import decodeHDRFile
-from StreakLaser import StreakLaser
-from HDF5Reader import parseHDF5
 
 import drjit as dr
 import copy
@@ -10,6 +7,7 @@ import copy
 # Imports de drjit
 # from drjit.cuda import Float, UInt32
 from drjit.llvm import Float, Int, Array3f
+from HDRDecoder import decodeHDRFile
 
 import argparse
 import numpy as np
@@ -72,10 +70,12 @@ def parseArgsIntoParams(params):
             params.resultsRoute = parsed_args.resultsRoute
     elif parsed_args.dataset is not None:
         params.dataset = parsed_args.dataset
-        parseHDF5(parsed_args, params)
-
-
-
+        params.manual = False
+        if parsed_args.voxelRes is not None:
+            params.VOXEL_RESOLUTION = parsed_args.voxelRes
+        if parsed_args.resultsRoute is not None:
+            params.resultsRoute = parsed_args.resultsRoute
+        
 
 
 def setParamsForCamera(params: TransientVoxelizationParams, transient_image: TransientImage, streak: int):
@@ -112,9 +112,6 @@ def setParamsForCamera(params: TransientVoxelizationParams, transient_image: Tra
 
 
 def initTransientImage(params: TransientVoxelizationParams, file_name: str, streak: int):
-
-    # TODO: Definir bien el streaklaser
-    # streakLaser = StreakLaser(0, 0)
 
     transient_image = decodeHDRFile(file_name)
 

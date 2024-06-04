@@ -30,11 +30,12 @@ from TransientVoxelization import initTransientImage, parseArgsIntoParams
 from BoxBounds import BoxBounds
 from TransientVoxelizationParams import TransientVoxelizationParams
 from FilterResults import apply_filters
+from HDF5Reader import parseHDF5
+from BackProjectionHDF5 import backprojectionHDF5
 
 def calcularIndices(x: Int, y: Int, width: int) -> Int:
     return (y * width) + x
     
-
 def sumTransientIntensitiesForOptim(voxeles: Array3f, transient_images: List[TransientImage], wallPoints: Array3f, datos: Float, wallCameraDilations: Float, indicesLectura: Float, numVoxeles: int) -> Float:
 
     altura = transient_images[0].height
@@ -61,7 +62,7 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, transient_images: List[Tra
     x += indicesLectura
 
     alturas = dr.tile(alturas, len(transient_images) * numVoxeles)
-
+ 
     indices = calcularIndices(x, alturas, transient_images[0].width)
 
     intensities = dr.gather(Float, datos, indices)
@@ -168,54 +169,62 @@ def almacenarResultados( intensidades: Float, resolution: int):
     return results
 
 def backprojection(params: TransientVoxelizationParams):
-
-    # Crear una instancia de TransientImage
-    transient_images = initTransientImages(params)
-
-    folder_name = params.inputFolder
-    if (params.OPTIM):
-        print(f"Empezando el proceso de backprojection optimizado para de la carpeta {folder_name}")
+    if (not params.manual):
+        # Backprojection a partir de un dataset HDF5
+        backprojectionHDF5(params)
     else:
-        print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
-    bounds = BoxBounds(params.ORTHO_OFFSETX, params.ORTHO_OFFSETY, params.ORTHO_OFFSETZ, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
+        # Crear una instancia de TransientImage
+        transient_images = initTransientImages(params)
 
-    resolution = bounds.resolution
+        folder_name = params.inputFolder
+        if (params.OPTIM):
+            print(f"Empezando el proceso de backprojection optimizado para de la carpeta {folder_name}")
+        else:
+            print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
-    start_time = time.time()
+        bounds = BoxBounds(params.ORTHO_OFFSETX, params.ORTHO_OFFSETY, params.ORTHO_OFFSETZ, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
 
-    voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations, indices = calcularParametros(resolution, bounds, transient_images)
+        resolution = bounds.resolution
 
-    limite = 64 * 64 * 32
+        start_time = time.time()
 
-    if (numVoxeles < limite):
-        print(f"Calculando intensidades sin dividir en trozos")
-        intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations, indices)
-    else:
-        intensidades = dr.zeros(Float, numVoxeles)
-        numTrozos = numVoxeles // limite
-        print(f"Dividiendo el cálculo en {numTrozos} trozos")
-        # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
-        for i in range(numTrozos):
-            # Si es el último trozo, calcular el resto de voxels
-            if (i == numTrozos - 1):
-                indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
-                voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                numVoxelesTrozo = numVoxeles - i * limite
-                dr.eval(dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, numVoxelesTrozo, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles))
-            else:
-                indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
-                voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limite, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles)
+        voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations, indices = calcularParametros(resolution, bounds, transient_images)
 
-    results = almacenarResultados(intensidades, resolution)
+        limite = 64 * 64 * 32
 
-    # Crear matrices de coordenadas voxel    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
+        if (numVoxeles < limite):
+            print(f"Calculando intensidades sin dividir en trozos")
+            intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations, indices)
+        else:
+            intensidades = dr.zeros(Float, numVoxeles)
+            numTrozos = numVoxeles // limite
+            print(f"Dividiendo el cálculo en {numTrozos} trozos")
+            # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
+            for i in range(numTrozos):
+                # Si es el último trozo, calcular el resto de voxels
+                if (i == numTrozos - 1):
+                    indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
+                    voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
+                    numVoxelesTrozo = numVoxeles - i * limite
+                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, numVoxelesTrozo, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles)
+                else:
+                    indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
+                    voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
+                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limite, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles)
 
-    # Guardar los resultados en un fichero:
+        results = almacenarResultados(intensidades, resolution)
+
+        # Crear matrices de coordenadas voxel    
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
+
+        visualizarResultado(results, resolution, params.resultsRoute)
+
+
+def visualizarResultado(results, resolution: int, ruta: str):
+        # Guardar los resultados en un fichero:
     print(f"Guardando resultados en results/results")
     FilterResults = apply_filters(resolution, results)
 
@@ -226,7 +235,7 @@ def backprojection(params: TransientVoxelizationParams):
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
-    plt.savefig('results/' + params.resultsRoute + '.png') 
+    plt.savefig('results/' + ruta + '.png') 
     plt.show()
     
     print(f"Proceso de backprojection finalizado")
