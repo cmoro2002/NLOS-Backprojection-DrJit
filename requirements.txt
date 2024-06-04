@@ -1,0 +1,5 @@
+drjit
+numpy
+h5py
+opencv-python
+matplotlib
