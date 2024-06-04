@@ -23,11 +23,12 @@ from BackProjectionParams import BackProjectionParams
 def visualizarResultado(results, resolution: int, ruta: str):
         # Guardar los resultados en un fichero:
     print(f"Guardando resultados en results/results")
-    FilterResults = apply_filters(resolution, results)
-    # FilterResults = np.squeeze(results)
+    # FilterResults = apply_filters(resolution, results)
+    FilterResults = np.squeeze(results[:][:][resolution // 2])
 
     # Visualizar los resultados
-    plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
+    # plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
+    plt.imshow(FilterResults, cmap='hot', interpolation='nearest')
 
     # flattened_results = results[:,:,z]
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')

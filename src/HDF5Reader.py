@@ -25,7 +25,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.squeeze(data.mean(axis=(0, 2))) # (4048, 256, 256)
     # transposed_data = data.transpose(2, 1, 0)
-    transposed_data = data.transpose(2, 0, 1)
+    transposed_data = data.transpose(2, 1, 0)
 
     # Aplanar el array a una dimensión, guardarlo en results por si estaba haciendose mal poniendo data = data.reshape(-1)
     results = transposed_data.reshape(-1)
