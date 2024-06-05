@@ -124,7 +124,7 @@ def calcularIndiceLectura(transient_images: List[TransientImage]) -> Float:
     indices = dr.arange(Int, 0, len(transient_images))
     indices = indices * (transient_images[0].width * transient_images[0].height)
 
-    indices = dr.repeat(indices, len(transient_images))
+    indices = dr.repeat(indices, transient_images[0].height)
 
     return indices
 

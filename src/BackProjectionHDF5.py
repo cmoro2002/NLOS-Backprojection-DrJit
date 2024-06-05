@@ -47,8 +47,8 @@ def almacenarResultados( intensidades: Float, resolution: int):
         for y in range(resolution):
             for x in range(resolution):
 
-                # results[y,x,z] = intensidades[i]
-                results[x,y,z] = intensidades[i]
+                results[y,x,z] = intensidades[i]
+                # results[x,y,z] = intensidades[i]
                 i += 1
     return results
 
@@ -60,7 +60,7 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
     altura = BPparams.height
 
     # Obtener las alturas y la distancia láser-voxel
-    alturas = dr.arange(Int,0, altura)
+    alturas = dr.arange(Int,0, altura * BPparams.depth)
     
     # r2 (128 distancias)
     r2 = dr.norm(voxeles - BPparams.laserWallPos)
@@ -81,10 +81,9 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
     # Mostrar por pantalla los valores de x correspondientes a la primera imagen (los primeros 256 valores)
     for i in range(256 * 127, 256 * 128):
         print(f"Valor de x en la posición {i}: {x[i]}")
-    x += indicesLectura
+    # x += indicesLectura
 
-
-    alturas = dr.tile(alturas, BPparams.depth * numVoxeles)
+    alturas = dr.tile(alturas, numVoxeles)
  
     indices = calcularIndices(x, alturas, BPparams.width)
 
@@ -112,9 +111,7 @@ def calcularIndiceLecturaHDF5(BPparams: BackProjectionParams) -> Float:
     indices = indices * (BPparams.width * BPparams.height)
 
     # Repetir los indices para que se apliquen a todas las imagenes
-    indices = dr.repeat(indices, BPparams.depth)
-    # for i in range(256):
-    #     print(f"Indice en la posición {i}: {indices[i]}")
+    indices = dr.repeat(indices, BPparams.height)
     return indices
 
 def generate_voxel_coordinates(volume_position, volume_size, resolution):

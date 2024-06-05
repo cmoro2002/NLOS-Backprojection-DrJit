@@ -14,7 +14,7 @@ class BackProjectionParams:
         self.width = data.shape[0]
         self.height = data.shape[1]
         self.depth = data.shape[2]
-        self.data = Float(results) # Datos del dataset en formato vector, no matriz
+        self.data = results # Datos del dataset en formato vector, no matriz
     
     def to_string(self):
         return (

@@ -4,7 +4,7 @@ from TransientVoxelizationParams import TransientVoxelizationParams
 from BackProjectionParams import BackProjectionParams
 
 import drjit as dr
-from drjit.llvm import Array3f
+from drjit.llvm import Array3f, Float
 
 # Reorganizar las coordenadas de (x, z, y) a (x, y, z)
 def reorganize_coords(coords):
@@ -19,18 +19,16 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # np.save('datasets/data.npy', data)
 
     data = np.load('datasets/data.npy')
-
+    print(data.shape)
     # data = np.array([0,0,0])
 
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.squeeze(data.mean(axis=(0, 2))) # (4048, 256, 256)
-    # transposed_data = data.transpose(2, 1, 0)
+    
     transposed_data = data.transpose(2, 1, 0)
 
-    # Aplanar el array a una dimensión, guardarlo en results por si estaba haciendose mal poniendo data = data.reshape(-1)
-    results = transposed_data.reshape(-1)
-    
-    print("Data leido")
+    # Aplanar el array a una dimensión, guardarlo en results
+    results = Float(transposed_data.reshape(-1))
 
     camera_position = np.array(f["cameraPosition"]).T # Trasponer para que pase a filas en vez de columas
     laser_position = np.array(f["laserPosition"]).T
@@ -79,7 +77,6 @@ def parseHDF5(dataset) -> BackProjectionParams:
     r4 = dr.norm(camera - wallPointsDr)
     print(f"r1 = {r1}")
     print(f"r4 = {r4}")
-    input()
 
     hiddenVolumePosition = np.array(f["hiddenVolumePosition"]).flatten()
     hiddenVolumeSize = np.array(f["hiddenVolumeSize"]).item()
@@ -92,10 +89,6 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Cambiar coordenadas y a z
     hiddenVolumePosition = np.array([hiddenVolumePosition[0], hiddenVolumePosition[2], hiddenVolumePosition[1]])
     print(f"HiddenVolumePosition: {hiddenVolumePosition}")
-    # input()
-
-    # posicionesReconstruccion = hiddenVolumePosition + hiddenVolumeSize * 2
-    # print(f"Posiciones de reconstrucción: {posicionesReconstruccion}")
 
     BPparams = BackProjectionParams(laserWallPos, t0, t_delta, data, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, results)
     print(BPparams.to_string())
