@@ -23,12 +23,12 @@ from BackProjectionParams import BackProjectionParams
 def visualizarResultado(results, resolution: int, ruta: str):
         # Guardar los resultados en un fichero:
     print(f"Guardando resultados en results/results")
-    # FilterResults = apply_filters(resolution, results)
-    FilterResults = np.squeeze(results[:][:][resolution // 2])
+    FilterResults = apply_filters(resolution, results)
+    # FilterResults = np.squeeze(results[:][:][resolution // 2])
 
     # Visualizar los resultados
-    # plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
-    plt.imshow(FilterResults, cmap='hot', interpolation='nearest')
+    plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
+    # plt.imshow(FilterResults, cmap='hot', interpolation='nearest')
 
     # flattened_results = results[:,:,z]
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
@@ -47,8 +47,8 @@ def almacenarResultados( intensidades: Float, resolution: int):
         for y in range(resolution):
             for x in range(resolution):
 
-                results[y,x,z] = intensidades[i]
-                # results[x,y,z] = intensidades[i]
+                # results[y,x,z] = intensidades[i]
+                results[x,y,z] = intensidades[i]
                 i += 1
     return results
 
@@ -64,23 +64,25 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
     
     # r2 (128 distancias)
     r2 = dr.norm(voxeles - BPparams.laserWallPos)
-    print(f"r2: {r2}")
+    # print(f"r2: {r2}")
     voxelesR = dr.repeat(voxeles, BPparams.depth * altura)
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
     r3 = dr.norm(voxelesR - wallPoints)
-    print(f"r3: {r3}")
+    # print(f"r3: {r3}")
 
     r2 = dr.repeat(r2, altura * BPparams.depth)
+
+    times = r2 + r3
 
     # r3 (128 imagenes, 128 distancias cada una)
     # Calcular los tiempos y sumar las intensidades
 
-    x = Int((r2 + r3 + BPparams.r1 + r4 - BPparams.t0) / BPparams.t_delta)
+    x = Int((times + BPparams.r1 + r4 - BPparams.t0) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
     # Mostrar por pantalla los valores de x correspondientes a la primera imagen (los primeros 256 valores)
-    for i in range(256 * 127, 256 * 128):
-        print(f"Valor de x en la posición {i}: {x[i]}")
+    # for i in range(256 * 127, 256 * 128):
+    #     print(f"Valor de x en la posición {i}: {x[i]}")
     # x += indicesLectura
 
     alturas = dr.tile(alturas, numVoxeles)
@@ -122,9 +124,9 @@ def generate_voxel_coordinates(volume_position, volume_size, resolution):
     for z in range(resolution):
         for y in range(resolution):
             for x in range(resolution):
-                fx = volume_position[0] + x * voxel_size
-                fy = volume_position[1] + y * voxel_size
-                fz = volume_position[2] + z * voxel_size
+                fx = volume_position[0] + (x * voxel_size)
+                fy = volume_position[1] + (y * voxel_size)
+                fz = volume_position[2] + (z * voxel_size)
                 
                 voxels[i] = np.array([fx, fy, fz])
                 i += 1

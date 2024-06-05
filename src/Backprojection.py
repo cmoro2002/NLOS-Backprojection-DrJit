@@ -41,7 +41,7 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, transient_images: List[Tra
     altura = transient_images[0].height
 
     # Obtener las alturas y la distancia láser-voxel
-    alturas = dr.arange(Int,0, altura)
+    alturas = dr.arange(Int,0, altura * len(transient_images))
     
     # r2 (128 distancias)
     r2 = dr.norm(voxeles - transient_images[0].laser)
@@ -59,9 +59,9 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, transient_images: List[Tra
 
     x = Int((times + transient_images[0].laserHitTime + wallCameraDilations) / transient_images[0].time_per_coord)
     x = dr.clip(x, 0, transient_images[0].width - 1)
-    x += indicesLectura
+    # x += indicesLectura
 
-    alturas = dr.tile(alturas, len(transient_images) * numVoxeles)
+    alturas = dr.tile(alturas, numVoxeles)
  
     indices = calcularIndices(x, alturas, transient_images[0].width)
 

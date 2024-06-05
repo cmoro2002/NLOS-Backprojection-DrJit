@@ -14,16 +14,17 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Leer el dataset
     f = h5py.File(dataset, 'r')
 
-    # data = np.array(f["data"])
+    data = np.array(f["data"])
     # Guardar la matriz en un archivo de texto
     # np.save('datasets/data.npy', data)
 
-    data = np.load('datasets/data.npy')
+    # data = np.load('datasets/data.npy')
     print(data.shape)
     # data = np.array([0,0,0])
 
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
-    data = np.squeeze(data.mean(axis=(0, 2))) # (4048, 256, 256)
+    data = np.sum(data, axis=2)
+    data = np.squeeze(data.mean(axis=(0))) # (4048, 256, 256)
     
     transposed_data = data.transpose(2, 1, 0)
 
@@ -72,9 +73,10 @@ def parseHDF5(dataset) -> BackProjectionParams:
     print(f"camera = {camera}")
     print(f"laserOrigin = {laserOrigin}")
     print(f"laserWallPos = {laserWallPos}")
+    print(f"wallPointsDr = {wallPointsDr}")
 
     r1 = dr.norm(laserWallPos - laserOrigin)
-    r4 = dr.norm(camera - wallPointsDr)
+    r4 = dr.norm(wallPointsDr - camera)
     print(f"r1 = {r1}")
     print(f"r4 = {r4}")
 

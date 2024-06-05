@@ -119,7 +119,7 @@ def initTransientImage(params: TransientVoxelizationParams, file_name: str, stre
 
     setParamsForCamera(params, transient_image, streak)
 
-    laserDist = np.sqrt(np.linalg.norm(transient_image.getLaser() - params.laserOrigin)**2)
+    laserDist = np.linalg.norm(transient_image.getLaser() - params.laserOrigin)
 
     transient_image.setLaserHitTime(0 if params.UNWARP_CAMERA else laserDist)
 
