@@ -32,42 +32,43 @@ from TransientVoxelizationParams import TransientVoxelizationParams
 from FilterResults import apply_filters
 from HDF5Reader import parseHDF5
 from BackProjectionHDF5 import backprojectionHDF5
+from BackProjectionParams import BackProjectionParams
 
 def calcularIndices(x: Int, y: Int, width: int) -> Int:
     return (y * width) + x
     
-def sumTransientIntensitiesForOptim(voxeles: Array3f, transient_images: List[TransientImage], wallPoints: Array3f, datos: Float, wallCameraDilations: Float, indicesLectura: Float, numVoxeles: int) -> Float:
+def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: Float, numVoxeles: int, BPparams: BackProjectionParams) -> Float:
 
-    altura = transient_images[0].height
+    altura = BPparams.height
 
     # Obtener las alturas y la distancia láser-voxel
-    alturas = dr.arange(Int,0, altura * len(transient_images))
+    alturas = dr.arange(Int,0, altura * BPparams.depth)
     
     # r2 (128 distancias)
-    r2 = dr.norm(voxeles - transient_images[0].laser)
+    r2 = dr.norm(voxeles - BPparams.laserWallPos)
 
-    voxelesR = dr.repeat(voxeles, len(transient_images) * altura)
+    voxelesR = dr.repeat(voxeles, BPparams.depth * altura)
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
     r3 = dr.norm(voxelesR - wallPoints)
 
-    r2 = dr.repeat(r2, altura * len(transient_images))
+    r2 = dr.repeat(r2, altura * BPparams.depth)
 
     # r3 (128 imagenes, 128 distancias cada una)
     # Calcular los tiempos y sumar las intensidades
     times = r2 + r3
 
-    x = Int((times + transient_images[0].laserHitTime + wallCameraDilations) / transient_images[0].time_per_coord)
-    x = dr.clip(x, 0, transient_images[0].width - 1)
+    x = Int((times + BPparams.r1 + r4) / BPparams.t_delta)
+    x = dr.clip(x, 0, BPparams.width - 1)
     # x += indicesLectura
 
     alturas = dr.tile(alturas, numVoxeles)
  
-    indices = calcularIndices(x, alturas, transient_images[0].width)
+    indices = calcularIndices(x, alturas, BPparams.width)
 
-    intensities = dr.gather(Float, datos, indices)
+    intensities = dr.gather(Float, BPparams.data, indices)
 
-    tam = len(transient_images) * altura
+    tam = BPparams.depth * altura
 
     return dr.block_sum(intensities, tam)
 
@@ -119,31 +120,19 @@ def definirVoxeles(resolution: int, bounds: BoxBounds) -> Array3f:
     print(f"Voxeles generados")
     return Array3f(voxels)
 
-def calcularIndiceLectura(transient_images: List[TransientImage]) -> Float:
-    # Definir vector de lectura en datos
-    indices = dr.arange(Int, 0, len(transient_images))
-    indices = indices * (transient_images[0].width * transient_images[0].height)
-
-    indices = dr.repeat(indices, transient_images[0].height)
-
-    return indices
-
-def calcularVoxeles(voxeles: Array3f, transient_images: List[TransientImage], numVoxeles: int, datos: Float, wallPoints: Array3f, wallCameraDilatations: Float, indices: Float) -> Float:
+def calcularVoxeles(voxeles: Array3f, transient_images: List[TransientImage], numVoxeles: int, datos: Float, wallPoints: Array3f, wallCameraDilatations: Float) -> Float:
 
     # Calcular los wallpoints de cada imagen 
 
     wallPoints = dr.tile(wallPoints, numVoxeles)
     wallCameraDilatations = dr.tile(wallCameraDilatations, numVoxeles)
-    indices = dr.tile(indices, numVoxeles)
-    
-    return sumTransientIntensitiesForOptim(voxeles, transient_images, wallPoints, datos, wallCameraDilatations, indices, numVoxeles)
+    BPParams = BackProjectionParams(transient_images[0].laser, 0, transient_images[0].time_per_coord, transient_images[0].width, transient_images[0].height, len(transient_images), transient_images[0].laserHitTime, wallCameraDilatations, wallPoints, None, None, datos)
+    return sumTransientIntensitiesForOptim(voxeles, wallPoints, wallCameraDilatations, numVoxeles, BPParams)
 
 def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: List[TransientImage]):
     numVoxeles = resolution * resolution * resolution
 
     voxelesDr = definirVoxeles(resolution, bounds)
-
-    indices = calcularIndiceLectura(transient_images)
 
     wallPoints = setWallPoints(transient_images)
 
@@ -155,7 +144,7 @@ def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: Li
         dr.scatter(wallCameraDilatations, transient_images[i].wallCameraDilation, dr.arange(Int, i * transient_images[0].height, (i + 1) * transient_images[0].height))
 
     print(f"Datos de las imágenes almacenados")
-    return voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations, indices
+    return voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations
 
 def almacenarResultados( intensidades: Float, resolution: int):
     results = np.zeros((resolution, resolution, resolution))
@@ -189,13 +178,13 @@ def backprojection(params: TransientVoxelizationParams):
 
         start_time = time.time()
 
-        voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations, indices = calcularParametros(resolution, bounds, transient_images)
+        voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations = calcularParametros(resolution, bounds, transient_images)
 
         limite = 64 * 64 * 32
 
         if (numVoxeles < limite):
             print(f"Calculando intensidades sin dividir en trozos")
-            intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations, indices)
+            intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations)
         else:
             intensidades = dr.zeros(Float, numVoxeles)
             numTrozos = numVoxeles // limite
@@ -207,11 +196,11 @@ def backprojection(params: TransientVoxelizationParams):
                     indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
                     voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
                     numVoxelesTrozo = numVoxeles - i * limite
-                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, numVoxelesTrozo, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles)
+                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, numVoxelesTrozo, datos, wallPoints, wallCameraDilatations), indicesVoxeles)
                 else:
                     indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
                     voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limite, datos, wallPoints, wallCameraDilatations, indices), indicesVoxeles)
+                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limite, datos, wallPoints, wallCameraDilatations), indicesVoxeles)
 
         results = almacenarResultados(intensidades, resolution)
 

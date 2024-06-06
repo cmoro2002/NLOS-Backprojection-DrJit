@@ -165,3 +165,4 @@ FastBackprojection-1.0.3
 FastBackprojectionEjecutables
 results/*
 datasets/*
+src/letter_ht_90/*
