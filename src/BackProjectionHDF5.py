@@ -55,7 +55,7 @@ def almacenarResultados( intensidades: Float, resolution: int):
 def calcularIndices(x: Int, y: Int, width: int) -> Int:
     return (y * width) + x
     
-def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float, indicesLectura: Float, numVoxeles: int, BPparams: BackProjectionParams) -> Float:
+def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: Float, numVoxeles: int, BPparams: BackProjectionParams) -> Float:
 
     altura = BPparams.height
 
@@ -64,28 +64,20 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
     
     # r2 (128 distancias)
     r2 = dr.norm(voxeles - BPparams.laserWallPos)
-    # print(f"r2: {r2}")
+
     voxelesR = dr.repeat(voxeles, BPparams.depth * altura)
 
     # Calcular las distancias voxel-pared para todas las imágenes y alturas
     r3 = dr.norm(voxelesR - wallPoints)
-    # print(f"r3: {r3}")
 
     r2 = dr.repeat(r2, altura * BPparams.depth)
 
-    times = r2 + r3
-
     # r3 (128 imagenes, 128 distancias cada una)
     # Calcular los tiempos y sumar las intensidades
+    times = r2 + r3
 
-    x = Int((times + BPparams.r1 + r4 - BPparams.t0) / BPparams.t_delta)
+    x = Int((times + BPparams.r1 + r4) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
-
-
-    # Mostrar por pantalla los valores de x correspondientes a la primera imagen (los primeros 256 valores)
-    # for i in range(256 * 127, 256 * 128):
-    #     print(f"Valor de x en la posición {i}: {x[i]}")
-    # x += indicesLectura
 
     alturas = dr.tile(alturas, numVoxeles)
  
@@ -97,43 +89,33 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
 
     return dr.block_sum(intensities, tam)
 
-def calcularVoxelesHDF5(voxeles: Array3f, numVoxeles: int, BPparams: BackProjectionParams, indices: Float) -> Float:
+def calcularVoxelesHDF5(voxeles: Array3f, numVoxeles: int, BPparams: BackProjectionParams) -> Float:
 
     # Calcular los wallpoints de cada imagen 
 
     wallPoints = dr.tile(BPparams.wallPoints, numVoxeles)
     r4 = dr.tile(BPparams.r4, numVoxeles)
-    print("El número de indices a calcular es de: ", numVoxeles * BPparams.depth * BPparams.depth)
-    indices = dr.tile(indices, numVoxeles)
+    print("El número de indices a calcular es de: ", numVoxeles * BPparams.depth * BPparams.height)
     
-    return sumTransientIntensitiesHDF5(voxeles, wallPoints, r4, indices, numVoxeles, BPparams)
-
-def calcularIndiceLecturaHDF5(BPparams: BackProjectionParams) -> Float:
-    # Definir vector de lectura en datos
-    indices = dr.arange(Int, 0, BPparams.depth)
-    # Apuntar al inicio de cada imagen
-    indices = indices * (BPparams.width * BPparams.height)
-
-    # Repetir los indices para que se apliquen a todas las imagenes
-    indices = dr.repeat(indices, BPparams.height)
-    return indices
+    return sumTransientIntensitiesForOptim(voxeles, wallPoints, r4, numVoxeles, BPparams)
 
 def generate_voxel_coordinates(volume_position, volume_size, resolution):
     voxel_size = volume_size / resolution
+    half_voxel_size = voxel_size / 2.0  # Desplazamiento para centrar el voxel
     voxels = np.zeros((resolution * resolution * resolution, 3), dtype=np.float32)
     i = 0
 
     for z in range(resolution):
         for y in range(resolution):
             for x in range(resolution):
-                fx = volume_position[0] + (x * voxel_size)
-                fy = volume_position[1] + (y * voxel_size)
-                fz = volume_position[2] + (z * voxel_size)
+                fx = volume_position[0] + (x * voxel_size) + half_voxel_size
+                fy = volume_position[1] + (y * voxel_size) + half_voxel_size
+                fz = volume_position[2] + (z * voxel_size) + half_voxel_size
                 
                 voxels[i] = np.array([fx, fy, fz])
                 i += 1
     
-    print(f"Voxeles generados")
+    print(f"Voxeles generados y centrados")
     return Array3f(voxels)
 
 def backprojectionHDF5(params: TransientVoxelizationParams):
@@ -148,15 +130,14 @@ def backprojectionHDF5(params: TransientVoxelizationParams):
     start_time = time.time()
     # limite = 64 * 64 * 32
     # El limite es resolucion al cubo * alto de la imagen * profundidad de la imagen / 2^32
-    limite = 2**31
+    limite = 64 * 64 * 8
 
-    indices = calcularIndiceLecturaHDF5(BPparams)
     if (numVoxeles < limite):
         print(f"Calculando intensidades sin dividir en trozos")
-        intensidades = calcularVoxelesHDF5(voxelesDr, numVoxeles, BPparams, indices)
+        intensidades = calcularVoxelesHDF5(voxelesDr, numVoxeles, BPparams)
     else:
         intensidades = dr.zeros(Float, numVoxeles)
-        numTrozos = numVoxeles * BPparams.depth * BPparams.height // limite
+        numTrozos = numVoxeles // limite
         print(f"Dividiendo el cálculo en {numTrozos} trozos")
         # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
         for i in range(numTrozos):
@@ -165,11 +146,11 @@ def backprojectionHDF5(params: TransientVoxelizationParams):
                 indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
                 numVoxelesTrozo = numVoxeles - i * limite
-                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, numVoxelesTrozo, BPparams, indices), indicesVoxeles)
+                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, numVoxelesTrozo, BPparams), indicesVoxeles)
             else:
                 indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limite,BPparams, indices), indicesVoxeles)
+                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limite,BPparams), indicesVoxeles)
 
     results = almacenarResultados(intensidades, resolution)
 

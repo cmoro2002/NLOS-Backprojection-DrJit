@@ -60,7 +60,6 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
 
     x = Int((times + BPparams.r1 + r4) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
-    # x += indicesLectura
 
     alturas = dr.tile(alturas, numVoxeles)
  
@@ -210,6 +209,8 @@ def backprojection(params: TransientVoxelizationParams):
         print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
         visualizarResultado(results, resolution, params.resultsRoute)
+    
+        return results
 
 
 def visualizarResultado(results, resolution: int, ruta: str):
