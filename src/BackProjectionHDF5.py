@@ -21,7 +21,7 @@ from HDF5Reader import parseHDF5
 from BackProjectionParams import BackProjectionParams
 
 def visualizarResultado(results, resolution: int, ruta: str):
-        # Guardar los resultados en un fichero:
+    # Guardar los resultados en un fichero:
     print(f"Guardando resultados en results/results")
     FilterResults = apply_filters(resolution, results)
     # FilterResults = np.squeeze(results[:][:][resolution // 2])
@@ -47,8 +47,8 @@ def almacenarResultados( intensidades: Float, resolution: int):
         for y in range(resolution):
             for x in range(resolution):
 
-                # results[y,x,z] = intensidades[i]
-                results[x,y,z] = intensidades[i]
+                results[y,x,z] = intensidades[i]
+                # results[x,y,z] = intensidades[i]
                 i += 1
     return results
 
