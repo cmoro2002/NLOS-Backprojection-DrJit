@@ -80,6 +80,8 @@ def sumTransientIntensitiesHDF5(voxeles: Array3f, wallPoints: Array3f, r4: Float
 
     x = Int((times + BPparams.r1 + r4 - BPparams.t0) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
+
+
     # Mostrar por pantalla los valores de x correspondientes a la primera imagen (los primeros 256 valores)
     # for i in range(256 * 127, 256 * 128):
     #     print(f"Valor de x en la posición {i}: {x[i]}")

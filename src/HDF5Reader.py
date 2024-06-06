@@ -28,6 +28,10 @@ def parseHDF5(dataset) -> BackProjectionParams:
     
     transposed_data = data.transpose(2, 1, 0)
 
+    width = transposed_data.shape[2]
+    height = transposed_data.shape[1]
+    depth = transposed_data.shape[0]
+
     # Aplanar el array a una dimensión, guardarlo en results
     results = Float(transposed_data.reshape(-1))
 
@@ -41,6 +45,8 @@ def parseHDF5(dataset) -> BackProjectionParams:
 
     t0 = np.array(f["t0"]).item()
     t_delta = np.array(f["deltaT"]).item()
+    print(f"Camera: {camera_position}")
+    input()
     
     # Aplicar la reorganización a las posiciones
     camera_position_reorganized = reorganize_coords(camera_position)
@@ -92,7 +98,8 @@ def parseHDF5(dataset) -> BackProjectionParams:
     hiddenVolumePosition = np.array([hiddenVolumePosition[0], hiddenVolumePosition[2], hiddenVolumePosition[1]])
     print(f"HiddenVolumePosition: {hiddenVolumePosition}")
 
-    BPparams = BackProjectionParams(laserWallPos, t0, t_delta, data, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, results)
+    BPparams = BackProjectionParams(laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, results)
+    print("Primera vez")
     print(BPparams.to_string())
     return BPparams
 
