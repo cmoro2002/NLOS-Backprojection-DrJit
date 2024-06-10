@@ -15,13 +15,16 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Leer el dataset
     f = h5py.File(dataset, 'r')
 
-    data = np.array(f["data"])
+    # data = np.array(f["data"])
     # Guardar la matriz en un archivo de texto
-    # np.save('datasets/data.npy', data)
+    # np.save('datasets/Z.npy', data)
+    # exit(0)
 
-    # data = np.load('datasets/data.npy')
-    print(data.shape)
-    # data = np.array([0,0,0])
+    if dataset == 'datasets/Z.hdf5':
+        data = np.load('datasets/data.npy')
+    else :
+        data = np.array(f["data"])
+
 
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.sum(data, axis=2)
@@ -35,8 +38,6 @@ def parseHDF5(dataset) -> BackProjectionParams:
     depth = transposed_data.shape[0]
 
     datos = dr.zeros(Float, height * width * depth)
-    print("Shape")
-    print(transposed_data[0][:][:].flatten().shape)
 
     for i in range(depth):
         tensorAux = TensorXf(transposed_data[i][:][:].flatten())
@@ -80,22 +81,11 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # for i in range (256 * 256 - 10):
     #     print(f"WallPoint en la posición {i}: {wallPoints_reorganized[i]}")
 
-    print(f"WallPoints shape: {wallPoints_reorganized.shape}, wallPoints: {wallPoints_reorganized}")
-    print(f"Camera shape: {camera.Shape} , camera: {camera}")
-    print(f"LaserOrigin shape: {laserOrigin.Shape}, laserOrigin: {laserOrigin}")
-    print(f"LaserWallPos shape: {laserWallPos.Shape}, laserWallPos: {laserWallPos}")
-
     wallPointsDr = Array3f(wallPoints_reorganized)
 
-    print(f"camera = {camera}")
-    print(f"laserOrigin = {laserOrigin}")
-    print(f"laserWallPos = {laserWallPos}")
-    print(f"wallPointsDr = {wallPointsDr}")
 
     r1 = dr.norm(laserWallPos - laserOrigin)
     r4 = dr.norm(wallPointsDr - camera)
-    print(f"r1 = {r1}")
-    print(f"r4 = {r4}")
 
     hiddenVolumePosition = np.array(f["hiddenVolumePosition"]).flatten()
     hiddenVolumeSize = np.array(f["hiddenVolumeSize"]).item()

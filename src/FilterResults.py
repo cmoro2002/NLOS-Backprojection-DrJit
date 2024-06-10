@@ -31,7 +31,7 @@ def apply_filters(resolution, backprojected):
                     max_intensity = c
                 filtered[x, y, z] = c
 
-    print("Filtro Laplaciano aplicado, normalizando...")
+    # print("Filtro Laplaciano aplicado, normalizando...")
     # Normalize to Final Storage
     for x in range(resolution):
         for y in range(resolution):
@@ -41,7 +41,7 @@ def apply_filters(resolution, backprojected):
                     val = 1
                 backprojected[x, y, z] = val
     
-    print("Valores normalizados, aplicando filtro de máximos...")
+    # print("Valores normalizados, aplicando filtro de máximos...")
 
     for x in range(resolution):
         for y in range(resolution):

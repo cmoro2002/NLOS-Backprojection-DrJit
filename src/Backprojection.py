@@ -102,7 +102,7 @@ def setWallPoints(transient_images: List[TransientImage]):
 
     return res
 
-def definirVoxeles(resolution: int, bounds: BoxBounds) -> Array3f:
+def definirVoxeles(resolution: int, bounds: BoxBounds, params: TransientVoxelizationParams) -> Array3f:
     voxels = np.zeros((resolution * resolution * resolution, 3), dtype=np.float32)
     i = 0
 
@@ -116,7 +116,7 @@ def definirVoxeles(resolution: int, bounds: BoxBounds) -> Array3f:
                 voxels[i] = np.array([fx, fy, fz])
                 i += 1
 
-    print(f"Voxeles generados")
+    if params.verbose: print(f"Voxeles generados")
     return Array3f(voxels)
 
 def calcularVoxeles(voxeles: Array3f, transient_images: List[TransientImage], numVoxeles: int, datos: Float, wallPoints: Array3f, wallCameraDilatations: Float) -> Float:
@@ -128,10 +128,10 @@ def calcularVoxeles(voxeles: Array3f, transient_images: List[TransientImage], nu
     BPParams = BackProjectionParams(transient_images[0].laser, 0, transient_images[0].time_per_coord, transient_images[0].width, transient_images[0].height, len(transient_images), transient_images[0].laserHitTime, wallCameraDilatations, wallPoints, None, None, datos)
     return sumTransientIntensitiesForOptim(voxeles, wallPoints, wallCameraDilatations, numVoxeles, BPParams)
 
-def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: List[TransientImage]):
+def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: List[TransientImage], params: TransientVoxelizationParams):
     numVoxeles = resolution * resolution * resolution
 
-    voxelesDr = definirVoxeles(resolution, bounds)
+    voxelesDr = definirVoxeles(resolution, bounds, params)
 
     wallPoints = setWallPoints(transient_images)
 
@@ -142,7 +142,7 @@ def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: Li
         dr.scatter(datos, transient_images[i].tensor.data, dr.arange(Int, i * transient_images[0].height * transient_images[0].width, (i + 1) * transient_images[0].height * transient_images[0].width)) 
         dr.scatter(wallCameraDilatations, transient_images[i].wallCameraDilation, dr.arange(Int, i * transient_images[0].height, (i + 1) * transient_images[0].height))
 
-    print(f"Datos de las imágenes almacenados")
+    if params.verbose: print(f"Datos de las imágenes almacenados")
     return voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations
 
 def almacenarResultados( intensidades: Float, resolution: int):
@@ -167,9 +167,9 @@ def backprojection(params: TransientVoxelizationParams):
 
         folder_name = params.inputFolder
         if (params.OPTIM):
-            print(f"Empezando el proceso de backprojection optimizado para de la carpeta {folder_name}")
+            if params.verbose: print(f"Empezando el proceso de backprojection optimizado para de la carpeta {folder_name}")
         else:
-            print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
+            if params.verbose: print(f"Empezando el proceso de backprojection para de la carpeta {folder_name}")
 
         bounds = BoxBounds(params.ORTHO_OFFSETX, params.ORTHO_OFFSETY, params.ORTHO_OFFSETZ, params.getMaxOrthoSize(), params.VOXEL_RESOLUTION)
 
@@ -177,17 +177,17 @@ def backprojection(params: TransientVoxelizationParams):
 
         start_time = time.time()
 
-        voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations = calcularParametros(resolution, bounds, transient_images)
+        voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations = calcularParametros(resolution, bounds, transient_images, params)
 
         limite = 64 * 64 * 32
 
         if (numVoxeles < limite):
-            print(f"Calculando intensidades sin dividir en trozos")
+            if params.verbose: print(f"Calculando intensidades sin dividir en trozos")
             intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations)
         else:
             intensidades = dr.zeros(Float, numVoxeles)
             numTrozos = numVoxeles // limite
-            print(f"Dividiendo el cálculo en {numTrozos} trozos")
+            if params.verbose: print(f"Dividiendo el cálculo en {numTrozos} trozos")
             # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
             for i in range(numTrozos):
                 # Si es el último trozo, calcular el resto de voxels
@@ -208,14 +208,14 @@ def backprojection(params: TransientVoxelizationParams):
         elapsed_time = end_time - start_time
         print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
-        visualizarResultado(results, resolution, params.resultsRoute)
+        visualizarResultado(results, resolution, params)
     
         return results
 
 
-def visualizarResultado(results, resolution: int, ruta: str):
+def visualizarResultado(results, resolution: int, params: TransientVoxelizationParams):
         # Guardar los resultados en un fichero:
-    print(f"Guardando resultados en results/results")
+    if params.verbose: print(f"Guardando resultados en results/{results}")
     FilterResults = apply_filters(resolution, results)
 
     # Visualizar los resultados
@@ -225,10 +225,10 @@ def visualizarResultado(results, resolution: int, ruta: str):
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
-    plt.savefig('results/' + ruta + '.png') 
+    plt.savefig('results/' + params.resultsRoute + '.png') 
     plt.show()
     
-    print(f"Proceso de backprojection finalizado")
+    if params.verbose: print(f"Proceso de backprojection finalizado")
 
 
 # Recorrer la lista de imagenes de la carpeta y crear una instancia de TransientImage por cada imagen
@@ -243,7 +243,7 @@ def initTransientImages(params: TransientVoxelizationParams):
     count = 0
     transient_images = []
 
-    print(f"Se han encontrado {len(files)} archivos en la carpeta {params.inputFolder}")
+    if params.verbose: print(f"Se han encontrado {len(files)} archivos en la carpeta {params.inputFolder}")
     
     # Recorrer los archivos y crear una instancia de TransientImage por cada imagen
     for file in files:
@@ -257,7 +257,7 @@ def initTransientImages(params: TransientVoxelizationParams):
 
             count += 1
         else :
-            print(f"El archivo {file} no es una imagen .hdr")
+            if params.verbose: print(f"El archivo {file} no es una imagen .hdr")
 
     print(f"Se han leido un total de {count} de imagenes")
     return transient_images
@@ -271,7 +271,7 @@ def main():
     params = TransientVoxelizationParams()
     parseArgsIntoParams(params)
 
-    print(f"Argumentos de línea de comandos leidos")
+    if params.verbose: print(f"Argumentos de línea de comandos leidos")
     backprojection(params)
 
 

@@ -130,27 +130,28 @@ def backprojectionHDF5(params: TransientVoxelizationParams):
     start_time = time.time()
     # limite = 64 * 64 * 32
     # El limite es resolucion al cubo * alto de la imagen * profundidad de la imagen / 2^32
-    limite = 64 * 64 * 8
+    limite = 2**31
 
-    if (numVoxeles < limite):
+    if (numVoxeles * BPparams.depth * BPparams.height < limite):
         print(f"Calculando intensidades sin dividir en trozos")
         intensidades = calcularVoxelesHDF5(voxelesDr, numVoxeles, BPparams)
     else:
         intensidades = dr.zeros(Float, numVoxeles)
-        numTrozos = numVoxeles // limite
+        numTrozos = numVoxeles * BPparams.depth * BPparams.height // limite
         print(f"Dividiendo el cálculo en {numTrozos} trozos")
         # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
         for i in range(numTrozos):
+            limiteReal = limite // BPparams.depth // BPparams.height
             # Si es el último trozo, calcular el resto de voxels
             if (i == numTrozos - 1):
-                indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
+                indicesVoxeles = dr.arange(Int, i * limiteReal, numVoxeles)
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                numVoxelesTrozo = numVoxeles - i * limite
+                numVoxelesTrozo = numVoxeles - i * limiteReal
                 dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, numVoxelesTrozo, BPparams), indicesVoxeles)
             else:
-                indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
+                indicesVoxeles = dr.arange(Int, i * limiteReal, (i + 1) * limiteReal)
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limite,BPparams), indicesVoxeles)
+                dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limiteReal,BPparams), indicesVoxeles)
 
     results = almacenarResultados(intensidades, resolution)
 

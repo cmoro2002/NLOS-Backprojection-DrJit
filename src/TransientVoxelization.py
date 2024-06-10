@@ -32,9 +32,21 @@ def parseArgsIntoParams(params):
     parser.add_argument("-resultsRoute", type=str, help="Nombre del archivo donde guardar los resultados")
     parser.add_argument("-manual", help="Entrada de datos manual")
     parser.add_argument("-dataset", type=str, help="Ruta del dataset")
+    parser.add_argument("-verbose", type=str, help="Mostrar información detallada")
     parsed_args = parser.parse_args()
 
+    # Parametros necesarios en modo manual y dataset
+    if parsed_args.voxelRes is not None:
+        params.VOXEL_RESOLUTION = parsed_args.voxelRes
+    if parsed_args.resultsRoute is not None:
+        params.resultsRoute = parsed_args.resultsRoute
+    if parsed_args.verbose is not None:
+        if parsed_args.verbose == "True":
+            params.verbose = True
+        else:
+            params.verbose = False
     if parsed_args.manual is not None:
+        # Modo manual
         params.manual = True
 
         # Asignar los argumentos a los parámetros
@@ -42,8 +54,6 @@ def parseArgsIntoParams(params):
             params.inputFolder = parsed_args.inputFolder
         if parsed_args.fov is not None:
             params.fov = np.radians(parsed_args.fov)
-        if parsed_args.voxelRes is not None:
-            params.VOXEL_RESOLUTION = parsed_args.voxelRes
         if parsed_args.ortho is not None:
             params.ORTHO_OFFSETX = parsed_args.ortho[0]
             params.ORTHO_OFFSETY = parsed_args.ortho[1]
@@ -66,15 +76,9 @@ def parseArgsIntoParams(params):
             params.laserOrigin = np.array(parsed_args.laser_origin)
         if parsed_args.Optim is not None:
             params.OPTIM = True
-        if parsed_args.resultsRoute is not None:
-            params.resultsRoute = parsed_args.resultsRoute
     elif parsed_args.dataset is not None:
         params.dataset = parsed_args.dataset
         params.manual = False
-        if parsed_args.voxelRes is not None:
-            params.VOXEL_RESOLUTION = parsed_args.voxelRes
-        if parsed_args.resultsRoute is not None:
-            params.resultsRoute = parsed_args.resultsRoute
         
 
 

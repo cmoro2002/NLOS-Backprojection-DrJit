@@ -7,22 +7,6 @@ from drjit.llvm import Array3f, Float
 
 class TransientVoxelizationParams:
     def __init__(self):
-        # General params
-        self.VERBOSE = False
-        self.VOXEL_RESOLUTION = 128
-        self.DELAYED_RENDER_BATCH_SIZE = 160000
-        self.SPHERE_MAX_RECURSIONS = 7
-        self.MEMORY_SAVING_MODE = False
-        self.MAX_INTENSITY_MULTIPLIER = 255
-        self.ERROR_THRESHOLD_WEIGHT = 1
-        self.ELLIPSOIDS_PER_PIXEL = 1
-        self.STOCHASTIC = False
-        self.ELLIPSOID_PER_PIXEL_THRESHOLD_WEIGHT = 1
-        self.USE_HALF_ELLIPSOIDS = True
-        self.ALLOW_OVERFLOW_PROTECTION = True
-        self.CLAMP_INTENSITY_GREATER_THAN = -1
-        self.NORMALIZE_TO_UNIT_INTERVAL = True
-
         # Ortho matrix size
         self.orthoMatrix = None
         self.voxelSize = 0
@@ -50,41 +34,11 @@ class TransientVoxelizationParams:
 
         # Input
         self.inputFolder = "../../2016_LookingAroundCorners/bunny_final_multilaser_2b_highres"
-        self.READ_HDR_FILES = True
-        self.lasersFile = None
-        self.readLasersAsText = False
-        self.wallFile = None
-        self.readWallAsText = False
-
-        # Output
-        self.DEFAULT_SAVE_AS_HDR = False
-        self.saveFolder = None
-        self.saveImage = False
-        self.filename2d = None
-        self.save2DRaw = False
-        self.filename2draw = None
-        self.printGrayscale = False
-        self.save3DDump = False
-        self.filename3d = None
-        self.save3DRaw = False
-        self.filename3draw = None
-        self.backprojectCpu = True
-        self.executionInfoFile = None
-        self.PRINT_TRANSIENT_IMAGES = False
-        self.OVERRIDE_TRANSIENT_WALL_POINTS = None
-
-        # Custom, not input-assignable params
-        self.AUTO_CLEAN = True
-        self.FORCE_2D_BACKPROJECT = False
-        self.ENABLE_HARDWARE_CONSERVATIVE_RASTER = False
-        self.CLEAR_STORAGE_ON_INIT = True
-        self.CUSTOM_TRANSIENT_IMAGES = None
-        self.AUTO_MANAGE_DISPLAY = False
-
         self.OPTIM = False
         self.resultsRoute = "resultado"
         self.manual = False
         self.dataset = "dataset/Z.hdf5"
+        self.verbose = False
 
     def setOrthoSize(self, size):
         self.ORTHO_SIZEX = self.ORTHO_SIZEY = self.ORTHO_SIZEZ = size
