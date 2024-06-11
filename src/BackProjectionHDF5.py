@@ -20,9 +20,9 @@ from FilterResults import apply_filters
 from HDF5Reader import parseHDF5
 from BackProjectionParams import BackProjectionParams
 
-def visualizarResultado(results, resolution: int, ruta: str):
+def visualizarResultado(results, resolution: int, params: TransientVoxelizationParams):
     # Guardar los resultados en un fichero:
-    print(f"Guardando resultados en results/results")
+    if params.verbose: print(f"Guardando resultados en results/{results}")
     FilterResults = apply_filters(resolution, results)
     # FilterResults = np.squeeze(results[:][:][resolution // 2])
 
@@ -34,10 +34,10 @@ def visualizarResultado(results, resolution: int, ruta: str):
     # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
-    plt.savefig('results/' + ruta + '.png') 
+    plt.savefig('results/' + params.resultsRoute + '.png') 
     plt.show()
     
-    print(f"Proceso de backprojection finalizado")
+    if params.verbose: print(f"Proceso de backprojection finalizado")
 
 def almacenarResultados( intensidades: Float, resolution: int):
     results = np.zeros((resolution, resolution, resolution))
@@ -95,7 +95,7 @@ def calcularVoxelesHDF5(voxeles: Array3f, numVoxeles: int, BPparams: BackProject
 
     wallPoints = dr.tile(BPparams.wallPoints, numVoxeles)
     r4 = dr.tile(BPparams.r4, numVoxeles)
-    print("El número de indices a calcular es de: ", numVoxeles * BPparams.depth * BPparams.height)
+    # print("El número de indices a calcular es de: ", numVoxeles * BPparams.depth * BPparams.height)
     
     return sumTransientIntensitiesForOptim(voxeles, wallPoints, r4, numVoxeles, BPparams)
 
@@ -115,7 +115,7 @@ def generate_voxel_coordinates(volume_position, volume_size, resolution):
                 voxels[i] = np.array([fx, fy, fz])
                 i += 1
     
-    print(f"Voxeles generados y centrados")
+    # print(f"Voxeles generados y centrados")
     return Array3f(voxels)
 
 def backprojectionHDF5(params: TransientVoxelizationParams):
@@ -133,12 +133,12 @@ def backprojectionHDF5(params: TransientVoxelizationParams):
     limite = 2**31
 
     if (numVoxeles * BPparams.depth * BPparams.height < limite):
-        print(f"Calculando intensidades sin dividir en trozos")
+        if params.verbose: print(f"Calculando intensidades sin dividir en trozos")
         intensidades = calcularVoxelesHDF5(voxelesDr, numVoxeles, BPparams)
     else:
         intensidades = dr.zeros(Float, numVoxeles)
         numTrozos = numVoxeles * BPparams.depth * BPparams.height // limite
-        print(f"Dividiendo el cálculo en {numTrozos} trozos")
+        if params.verbose: print(f"Dividiendo el cálculo en {numTrozos} trozos")
         # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
         for i in range(numTrozos):
             limiteReal = limite // BPparams.depth // BPparams.height
@@ -160,6 +160,6 @@ def backprojectionHDF5(params: TransientVoxelizationParams):
     elapsed_time = end_time - start_time
     print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
-    visualizarResultado(results, resolution, params.resultsRoute)
+    visualizarResultado(results, resolution, params)
 
     return results

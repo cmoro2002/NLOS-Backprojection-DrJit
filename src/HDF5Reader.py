@@ -21,7 +21,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # exit(0)
 
     if dataset == 'datasets/Z.hdf5':
-        data = np.load('datasets/data.npy')
+        data = np.load('datasets/Z.npy')
     else :
         data = np.array(f["data"])
 
@@ -44,7 +44,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
         tensor = Tensor2f(tensorAux.array, (height, width))
         dr.scatter(datos, tensor.data, dr.arange(Int, i * height * width, (i + 1) * height * width)) 
 
-    print(f"Datos de las imágenes almacenados")
+    # print(f"Datos de las imágenes almacenados")
     # Aplanar el array a una dimensión, guardarlo en results
     # results = Float(transposed_data.reshape(-1))
 
@@ -52,13 +52,8 @@ def parseHDF5(dataset) -> BackProjectionParams:
     laser_position = np.array(f["laserPosition"]).T
     laser_grid_positions = np.array(f["laserGridPositions"]).flatten()
 
-    # Probar a poner el valor manualmente
-    print(f"Laser grid positions: {laser_grid_positions}")
-    # laser_grid_positions[1] = -0.5
-
     t0 = np.array(f["t0"]).item()
     t_delta = np.array(f["deltaT"]).item()
-    print(f"Camera: {camera_position}")
     
     # Aplicar la reorganización a las posiciones
     camera_position_reorganized = reorganize_coords(camera_position)
@@ -76,13 +71,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
 
     # Intercambiar coordenadas y y z
     wallPoints_reorganized = wallPoints[:, [0, 2, 1]]
-
-    # print(wallPoints.shape)
-    # for i in range (256 * 256 - 10):
-    #     print(f"WallPoint en la posición {i}: {wallPoints_reorganized[i]}")
-
     wallPointsDr = Array3f(wallPoints_reorganized)
-
 
     r1 = dr.norm(laserWallPos - laserOrigin)
     r4 = dr.norm(wallPointsDr - camera)
@@ -97,11 +86,10 @@ def parseHDF5(dataset) -> BackProjectionParams:
 
     # Cambiar coordenadas y a z
     hiddenVolumePosition = np.array([hiddenVolumePosition[0], hiddenVolumePosition[2], hiddenVolumePosition[1]])
-    print(f"HiddenVolumePosition: {hiddenVolumePosition}")
 
-    BPparams = BackProjectionParams(laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, datos)
-    print("Primera vez")
-    print(BPparams.to_string())
-    return BPparams
+    res = BackProjectionParams(laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, datos)
+    print(res.to_string())
+    return res
+
 
 

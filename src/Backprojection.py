@@ -179,27 +179,28 @@ def backprojection(params: TransientVoxelizationParams):
 
         voxelesDr, numVoxeles, datos, wallPoints, wallCameraDilatations = calcularParametros(resolution, bounds, transient_images, params)
 
-        limite = 64 * 64 * 32
+        limite = 2**31
 
-        if (numVoxeles < limite):
+        if (numVoxeles * len(transient_images) * transient_images[0].height < limite):
             if params.verbose: print(f"Calculando intensidades sin dividir en trozos")
             intensidades = calcularVoxeles(voxelesDr, transient_images, numVoxeles, datos, wallPoints, wallCameraDilatations)
         else:
             intensidades = dr.zeros(Float, numVoxeles)
-            numTrozos = numVoxeles // limite
+            numTrozos = numVoxeles * len(transient_images) * transient_images[0].height // limite
             if params.verbose: print(f"Dividiendo el cálculo en {numTrozos} trozos")
             # Hacer el calculo de intensidades por partes, ya que no se puede hacer con resolucion >= 64
             for i in range(numTrozos):
+                limiteReal = limite // len(transient_images) // transient_images[0].height
                 # Si es el último trozo, calcular el resto de voxels
                 if (i == numTrozos - 1):
-                    indicesVoxeles = dr.arange(Int, i * limite, numVoxeles)
+                    indicesVoxeles = dr.arange(Int, i * limiteReal, numVoxeles)
                     voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                    numVoxelesTrozo = numVoxeles - i * limite
+                    numVoxelesTrozo = numVoxeles - i * limiteReal
                     dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, numVoxelesTrozo, datos, wallPoints, wallCameraDilatations), indicesVoxeles)
                 else:
-                    indicesVoxeles = dr.arange(Int, i * limite, (i + 1) * limite)
+                    indicesVoxeles = dr.arange(Int, i * limiteReal, (i + 1) * limiteReal)
                     voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
-                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limite, datos, wallPoints, wallCameraDilatations), indicesVoxeles)
+                    dr.scatter( intensidades, calcularVoxeles(voxelesTrozo, transient_images, limiteReal, datos, wallPoints, wallCameraDilatations), indicesVoxeles)
 
         results = almacenarResultados(intensidades, resolution)
 
@@ -226,7 +227,7 @@ def visualizarResultado(results, resolution: int, params: TransientVoxelizationP
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
     plt.savefig('results/' + params.resultsRoute + '.png') 
-    plt.show()
+    if params.verbose: plt.show()
     
     if params.verbose: print(f"Proceso de backprojection finalizado")
 
