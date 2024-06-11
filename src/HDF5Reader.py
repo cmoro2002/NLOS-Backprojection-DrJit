@@ -14,6 +14,7 @@ def reorganize_coords(coords):
 def parseHDF5(dataset) -> BackProjectionParams:
     # Leer el dataset
     f = h5py.File(dataset, 'r')
+    confocal = np.array(f["isConfocal"]).item()
 
     # data = np.array(f["data"])
     # Guardar la matriz en un archivo de texto
@@ -73,8 +74,12 @@ def parseHDF5(dataset) -> BackProjectionParams:
     wallPoints_reorganized = wallPoints[:, [0, 2, 1]]
     wallPointsDr = Array3f(wallPoints_reorganized)
 
-    r1 = dr.norm(laserWallPos - laserOrigin)
     r4 = dr.norm(wallPointsDr - camera)
+    if confocal: 
+        r1 = r4
+    else:
+        r1 = dr.norm(laserWallPos - laserOrigin)
+
 
     hiddenVolumePosition = np.array(f["hiddenVolumePosition"]).flatten()
     hiddenVolumeSize = np.array(f["hiddenVolumeSize"]).item()
@@ -87,7 +92,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Cambiar coordenadas y a z
     hiddenVolumePosition = np.array([hiddenVolumePosition[0], hiddenVolumePosition[2], hiddenVolumePosition[1]])
 
-    res = BackProjectionParams(laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, datos)
+    res = BackProjectionParams(laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosition, hiddenVolumeSize, datos, confocal)
     print(res.to_string())
     return res
 

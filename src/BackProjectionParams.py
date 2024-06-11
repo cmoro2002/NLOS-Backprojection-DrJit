@@ -1,5 +1,5 @@
 class BackProjectionParams:
-    def __init__( self, laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPoints, hiddenVolumePosition, hiddenVolumeSize, results) :
+    def __init__( self, laserWallPos, t0, t_delta, width, height, depth, r1, r4, wallPoints, hiddenVolumePosition, hiddenVolumeSize, results, confocal) :
         self.laserWallPos = laserWallPos # Posicion del laser
         self.t0 = t0 # Tiempo inicial
         self.t_delta = t_delta # Tiempo entre frames
@@ -12,6 +12,7 @@ class BackProjectionParams:
         self.height = height
         self.depth = depth
         self.data = results # Datos del dataset en formato vector, no matriz
+        self.confocal = confocal
     
     def to_string(self):
         return (
@@ -27,4 +28,5 @@ class BackProjectionParams:
             f"  width: {self.width}\n"
             f"  height: {self.height}\n"
             f"  depth: {self.depth}\n"
+            f"  confocal: {self.confocal}\n"
         )

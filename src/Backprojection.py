@@ -125,7 +125,7 @@ def calcularVoxeles(voxeles: Array3f, transient_images: List[TransientImage], nu
 
     wallPoints = dr.tile(wallPoints, numVoxeles)
     wallCameraDilatations = dr.tile(wallCameraDilatations, numVoxeles)
-    BPParams = BackProjectionParams(transient_images[0].laser, 0, transient_images[0].time_per_coord, transient_images[0].width, transient_images[0].height, len(transient_images), transient_images[0].laserHitTime, wallCameraDilatations, wallPoints, None, None, datos)
+    BPParams = BackProjectionParams(transient_images[0].laser, 0, transient_images[0].time_per_coord, transient_images[0].width, transient_images[0].height, len(transient_images), transient_images[0].laserHitTime, wallCameraDilatations, wallPoints, None, None, datos, False)
     return sumTransientIntensitiesForOptim(voxeles, wallPoints, wallCameraDilatations, numVoxeles, BPParams)
 
 def calcularParametros( resolution: int, bounds: BoxBounds, transient_images: List[TransientImage], params: TransientVoxelizationParams):

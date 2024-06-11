@@ -26,12 +26,12 @@ def visualizarResultado(results, resolution: int, params: TransientVoxelizationP
     FilterResults = apply_filters(resolution, results)
     # FilterResults = np.squeeze(results[:][:][resolution // 2])
 
-    # Visualizar los resultados
-    plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
-    # plt.imshow(FilterResults, cmap='hot', interpolation='nearest')
+    # Invertir la imagen en el eje vertical
+    flipped_results = np.flipud(FilterResults.max_result)
 
-    # flattened_results = results[:,:,z]
-    # plt.imshow(flattened_results, cmap='hot', interpolation='nearest')
+    # Visualizar los resultados
+    plt.imshow(flipped_results, cmap='hot', interpolation='nearest')
+
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
     plt.savefig('results/' + params.resultsRoute + '.png') 
@@ -61,22 +61,23 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
 
     # Obtener las alturas y la distancia láser-voxel
     alturas = dr.arange(Int,0, altura * BPparams.depth)
-    
-    # r2 (128 distancias)
-    r2 = dr.norm(voxeles - BPparams.laserWallPos)
-
     voxelesR = dr.repeat(voxeles, BPparams.depth * altura)
 
-    # Calcular las distancias voxel-pared para todas las imágenes y alturas
-    r3 = dr.norm(voxelesR - wallPoints)
+    # r2 (128 distancias)
+    if BPparams.confocal:
+        # Calcular las distancias voxel-pared para todas las imágenes y alturas
+        r3 = dr.norm(voxelesR - wallPoints)
+        r2 = r3
+    else:
+        # Calcular las distancias voxel-pared para todas las imágenes y alturas
+        r3 = dr.norm(voxelesR - wallPoints)
+        r2 = dr.norm(voxeles - BPparams.laserWallPos)
+        r2 = dr.repeat(r2, altura * BPparams.depth)
 
-    r2 = dr.repeat(r2, altura * BPparams.depth)
 
-    # r3 (128 imagenes, 128 distancias cada una)
+
     # Calcular los tiempos y sumar las intensidades
-    times = r2 + r3
-
-    x = Int((times + BPparams.r1 + r4) / BPparams.t_delta)
+    x = Int((r2 + r3 + BPparams.r1 + r4) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
 
     alturas = dr.tile(alturas, numVoxeles)
