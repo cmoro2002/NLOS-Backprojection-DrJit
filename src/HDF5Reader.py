@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+import os
 from TransientVoxelizationParams import TransientVoxelizationParams
 from BackProjectionParams import BackProjectionParams
 from Tensor import Tensor2f
@@ -16,16 +17,8 @@ def parseHDF5(dataset) -> BackProjectionParams:
     f = h5py.File(dataset, 'r')
     confocal = np.array(f["isConfocal"]).item()
 
-    # data = np.array(f["data"])
-    # Guardar la matriz en un archivo de texto
-    # np.save('datasets/Z.npy', data)
-    # exit(0)
-
-    if dataset == 'datasets/Z.hdf5':
-        data = np.load('datasets/Z.npy')
-    else :
-        data = np.array(f["data"])
-
+    # npy_path = f'{datasetReal}.npy'
+    data = np.array(f["data"])
 
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.sum(data, axis=2)

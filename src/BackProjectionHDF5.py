@@ -66,18 +66,24 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
     # r2 (128 distancias)
     if BPparams.confocal:
         # Calcular las distancias voxel-pared para todas las imágenes y alturas
+        # Si es confocal r3 = r2, por lo tanto times = r3 + r3 = r3 * 2
         r3 = dr.norm(voxelesR - wallPoints)
-        r2 = r3
+        times = r3 * 2
     else:
         # Calcular las distancias voxel-pared para todas las imágenes y alturas
         r3 = dr.norm(voxelesR - wallPoints)
         r2 = dr.norm(voxeles - BPparams.laserWallPos)
         r2 = dr.repeat(r2, altura * BPparams.depth)
-
-
+        times = r2 + r3
 
     # Calcular los tiempos y sumar las intensidades
-    x = Int((r2 + r3 + BPparams.r1 + r4) / BPparams.t_delta)
+    if BPparams.confocal:
+        # Si es confocal r1 = r4
+        r1 = r4 
+    else:
+        r1 = BPparams.r1
+
+    x = Int((times + r1 + r4) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
 
     alturas = dr.tile(alturas, numVoxeles)
