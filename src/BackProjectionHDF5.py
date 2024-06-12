@@ -27,10 +27,10 @@ def visualizarResultado(results, resolution: int, params: TransientVoxelizationP
     # FilterResults = np.squeeze(results[:][:][resolution // 2])
 
     # Invertir la imagen en el eje vertical
-    flipped_results = np.flipud(FilterResults.max_result)
+    # flipped_results = np.flipud(FilterResults.max_result)
 
     # Visualizar los resultados
-    plt.imshow(flipped_results, cmap='hot', interpolation='nearest')
+    plt.imshow(FilterResults.max_result, cmap='hot', interpolation='nearest')
 
     plt.colorbar()
     # Guardar la imagen en results/params.resultsRoute
@@ -39,18 +39,25 @@ def visualizarResultado(results, resolution: int, params: TransientVoxelizationP
     
     if params.verbose: print(f"Proceso de backprojection finalizado")
 
-def almacenarResultados( intensidades: Float, resolution: int):
-    results = np.zeros((resolution, resolution, resolution))
-    i = 0
-    for z in range(resolution):
-    # z = resolution // 2
-        for y in range(resolution):
-            for x in range(resolution):
+# def almacenarResultados( intensidades: Float, resolution: int):
+#     results = np.zeros((resolution, resolution, resolution))
+#     i = 0
+#     for z in range(resolution):
+#     # z = resolution // 2
+#         for y in range(resolution):
+#             for x in range(resolution):
 
-                results[y,x,z] = intensidades[i]
-                # results[x,y,z] = intensidades[i]
-                i += 1
-    return results
+#                 results[y,x,z] = intensidades[i]
+#                 # results[x,y,z] = intensidades[i]
+#                 i += 1
+#     return results
+
+def almacenarResultados( intensidades: Float, resolution: int):
+    array = np.array(intensidades)
+    array = array.reshape((resolution, resolution, resolution), order='F')
+
+    array = array.transpose((1, 0, 2))
+    return array
 
 def calcularIndices(x: Int, y: Int, width: int) -> Int:
     return (y * width) + x
@@ -128,7 +135,7 @@ def generate_voxel_coordinates(volume_position, volume_size, resolution):
     # print(f"Voxeles generados y centrados")
     return Array3f(voxels)
 
-def backprojectionHDF5(params: TransientVoxelizationParams, BPparams: BackProjectionParams):
+def backprojectionHDF5(params: TransientVoxelizationParams, BPparams: BackProjectionParams, showResults: bool = True):
     # Backprojection a partir de un dataset HDF5
     print(f"Empezando el proceso de backprojection para el dataset {params.dataset}")
 
@@ -162,14 +169,13 @@ def backprojectionHDF5(params: TransientVoxelizationParams, BPparams: BackProjec
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
                 dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limiteReal,BPparams), indicesVoxeles)
 
-    # results = almacenarResultados(intensidades, resolution)
-    print(intensidades)
+    if showResults: results = almacenarResultados(intensidades, resolution)
 
     # Crear matrices de coordenadas voxel    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
-    # visualizarResultado(results, resolution, params)
+    if showResults: visualizarResultado(results, resolution, params)
 
     return intensidades

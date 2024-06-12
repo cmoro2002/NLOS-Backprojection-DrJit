@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import convolve
 
 class FilterResults:
     def __init__(self, max_result, max_result_depth, value):
@@ -19,16 +20,20 @@ def apply_filters(resolution, backprojected):
         for y in range(1, resolution - 1):
             for z in range(1, resolution - 1):
                 c = backprojected[x, y, z]
-                neighbours = 0
-                for xf in range(-1, 2):
-                    for yf in range(-1, 2):
-                        for zf in range(-1, 2):
-                            if (xf != 0 or yf != 0 or zf != 0):
-                                neighbours += backprojected[x + xf, y + yf, z + zf]
                 
-                c = 26 * c - neighbours
+                # Suma de vecinos directamente calculada
+                neighbours_sum = (
+                    backprojected[x-1:x+2, y-1:y+2, z-1:z+2].sum() - c
+                )
+                
+                # Aplicación del filtro
+                c = 26 * c - neighbours_sum
+                
+                # Actualización del máximo
                 if c > max_intensity:
                     max_intensity = c
+                
+                # Almacenamiento del resultado filtrado
                 filtered[x, y, z] = c
 
     # print("Filtro Laplaciano aplicado, normalizando...")

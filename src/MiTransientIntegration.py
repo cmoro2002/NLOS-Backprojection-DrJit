@@ -168,7 +168,7 @@ def generateReconstruction(scene, hiddenVolumePos, hiddenVolumeSize, laserWallPo
 
     backProjectionParameters = BackProjectionParams(laserWallPosDr, t0, deltaT, width, height, depth, r1, r4, wallPointsDr, hiddenVolumePosForReconstruction, hiddenVolumeSize, dataArray, False)
 
-    return backprojectionHDF5(params, backProjectionParameters)
+    return backprojectionHDF5(params, backProjectionParameters, False)
 
 # Función para manejar las pulsaciones de teclas
 def on_press(key):
@@ -187,15 +187,13 @@ def on_press(key):
             hiddenVolumePos[2] += 0.1 
         elif key.char == 'k':
             hiddenVolumePos[2] -= 0.1
-        elif key.char == 'q':
-            exit(0)
     except AttributeError:
         pass
 
 # plt.ion()
 
 # Variables for the scene
-hiddenVolumePos = np.array([0.0, -0.2, 1.0])
+hiddenVolumePos = np.array([0.0, 0.0, 1.0])
 hiddenVolumeReconstructionPos = np.array([0.0, 0.0, 1.0])
 hiddenVolumeSize = 0.91
 laserOrigin = np.array([-0.5, 0.0, 0.25])
@@ -205,8 +203,8 @@ depth = 64
 width = 600
 deltaT = 0.006
 t0 = 1.85
-sampleAmount = 300
-voxelResolution = 64
+sampleAmount = 500
+voxelResolution = 32
 resultsRoute = "mitsuba"
 loopAmount = 10
 
@@ -240,8 +238,3 @@ while(True):
     reconstruction = almacenarResultados(intensities, voxelResolution)
 
     visualizarResultado(reconstruction, voxelResolution, params)
-
-
-
-
-# print("Fin de la ejecución")
