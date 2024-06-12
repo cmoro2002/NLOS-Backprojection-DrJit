@@ -89,8 +89,6 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
     x = Int(((times + r1 + r4) - BPparams.t0) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
 
-    print(x)
-
     alturas = dr.tile(alturas, numVoxeles)
  
     indices = calcularIndices(x, alturas, BPparams.width)
@@ -164,13 +162,14 @@ def backprojectionHDF5(params: TransientVoxelizationParams, BPparams: BackProjec
                 voxelesTrozo = dr.gather(Array3f, voxelesDr, indicesVoxeles)
                 dr.scatter( intensidades, calcularVoxelesHDF5(voxelesTrozo, limiteReal,BPparams), indicesVoxeles)
 
-    results = almacenarResultados(intensidades, resolution)
+    # results = almacenarResultados(intensidades, resolution)
+    print(intensidades)
 
     # Crear matrices de coordenadas voxel    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"El proceso de backprojection ha tardado {elapsed_time} segundos")
 
-    visualizarResultado(results, resolution, params)
+    # visualizarResultado(results, resolution, params)
 
-    return results
+    return intensidades
