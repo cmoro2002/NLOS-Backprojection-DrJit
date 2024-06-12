@@ -34,21 +34,18 @@ def get_grid_xyz(nx, ny, rw_scale_x, rw_scale_y):
     return np.stack([xg, yg, np.zeros((nx, ny))], axis=-1).astype(np.float32)
 
 def visualizarResultado(results, resolution: int, params: TransientVoxelizationParams):
-    # Guardar los resultados en un fichero:
-    if params.verbose: print(f"Guardando resultados en results/{results}")
     FilterResults = apply_filters(resolution, results)
-    # FilterResults = np.squeeze(results[:][:][resolution // 2])
 
     # Invertir la imagen en el eje vertical
     flipped_results = np.flipud(FilterResults.max_result)
 
     # Visualizar los resultados
+    plt.clf()
     plt.imshow(flipped_results, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+    print("Pausing...")
+    plt.pause(0.1)
 
-    # plt.colorbar()
-    # Guardar la imagen en results/params.resultsRoute
-    # plt.savefig('results/' + params.resultsRoute + '.png') 
-    plt.draw()
 
 def loadScene(hiddenVolumePos, hiddenVolumeSize, laserOrigin, cameraOrigin, height, depth, width, deltaT, t0, sampleAmount):
     # Load the geometry of the hidden scene
@@ -157,27 +154,6 @@ def convertDataToArray(data_transient, height, depth, width):
 
     return datos
 
-def visualizarResultado(results, resolution: int, params: TransientVoxelizationParams):
-    # Guardar los resultados en un fichero:
-    if params.verbose: print(f"Guardando resultados en results/{results}")
-    FilterResults = apply_filters(resolution, results)
-    # FilterResults = np.squeeze(results[:][:][resolution // 2])
-
-    # Invertir la imagen en el eje vertical
-    flipped_results = np.flipud(FilterResults.max_result)
-
-    # Visualizar los resultados
-    plt.imshow(flipped_results, cmap='hot', interpolation='nearest')
-    plt.colorbar()
-
-    # Guardar la imagen en results/params.resultsRoute
-    plt.savefig('results/' + params.resultsRoute + '.png') 
-    plt.show()
-
-    # Pausa de 1 segundo antes de cerrar la ventana
-    time.sleep(1)
-    plt.close()
-
 def generateReconstruction(scene, hiddenVolumePos, hiddenVolumeSize, laserWallPosDr, t0, deltaT, width, height, depth, wallPointsDr):
     data_transient = generateTransientDataFromScene(scene)
 
@@ -194,6 +170,29 @@ def generateReconstruction(scene, hiddenVolumePos, hiddenVolumeSize, laserWallPo
 
     return backprojectionHDF5(params, backProjectionParameters)
 
+# Función para manejar las pulsaciones de teclas
+def on_press(key):
+    print("Pulsadoooo")
+    global hiddenVolumePos
+    try:
+        if key.char == 'w':
+            hiddenVolumePos[1] += 0.1  # Mover hacia arriba
+        elif key.char == 's':
+            hiddenVolumePos[1] -= 0.1  # Mover hacia abajo
+        elif key.char == 'a':
+            hiddenVolumePos[0] -= 0.1  # Mover hacia la izquierda
+        elif key.char == 'd':
+            hiddenVolumePos[0] += 0.1  # Mover hacia la derecha
+        elif key.char == 'j':
+            hiddenVolumePos[2] += 0.1 
+        elif key.char == 'k':
+            hiddenVolumePos[2] -= 0.1
+        elif key.char == 'q':
+            exit(0)
+    except AttributeError:
+        pass
+
+# plt.ion()
 
 # Variables for the scene
 hiddenVolumePos = np.array([0.0, -0.2, 1.0])
@@ -225,18 +224,24 @@ laserWallPosDr = Array3f(laserWallPos)
 
 timeInit = time.time()
 
-scene = loadScene(hiddenVolumePos, hiddenVolumeSize, laserOrigin, cameraOrigin, height, depth, width, deltaT, t0, sampleAmount)
+
 
 # intensities = dr.zeros(Float, voxelResolution ** 3)
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
 
-# for i in range(loopAmount):
-intensities = generateReconstruction(scene, hiddenVolumeReconstructionPos, hiddenVolumeSize, laserWallPosDr, t0, deltaT, width, height, depth, wallPointsDr)
+# Detener el listener al cerrar la ventana de matplotlib
+# listener.join()
 
-reconstruction = almacenarResultados(intensities, voxelResolution)
-time2 = time.time()
+while(True):
+    scene = loadScene(hiddenVolumePos, hiddenVolumeSize, laserOrigin, cameraOrigin, height, depth, width, deltaT, t0, sampleAmount)
+    intensities = generateReconstruction(scene, hiddenVolumeReconstructionPos, hiddenVolumeSize, laserWallPosDr, t0, deltaT, width, height, depth, wallPointsDr)
 
-print(f"Tiempo total de ejecución: {time2 - timeInit} segundos")
+    reconstruction = almacenarResultados(intensities, voxelResolution)
 
-visualizarResultado(reconstruction, voxelResolution, params)
+    visualizarResultado(reconstruction, voxelResolution, params)
+
+
+
 
 # print("Fin de la ejecución")
