@@ -6,7 +6,7 @@ import numpy as np
 import drjit as dr
 
 # Imports de drjit
-from drjit.llvm import Float, Int, Array3f, UInt32, Loop, UInt, TensorXf
+from drjit.llvm import Float, Int, Array3f
 
 from typing import List
 import matplotlib.pyplot as plt
@@ -62,6 +62,8 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
     # Obtener las alturas y la distancia láser-voxel
     alturas = dr.arange(Int,0, altura * BPparams.depth)
     voxelesR = dr.repeat(voxeles, BPparams.depth * altura)
+    # Adaptar tamaño de voxeles a número de wallPoints (256 x 256)
+    # voxelesR = dr.repeat(voxeles, 256 * 256)
 
     # r2 (128 distancias)
     if BPparams.confocal:
@@ -70,6 +72,7 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
         r3 = dr.norm(voxelesR - wallPoints)
         times = r3 * 2
     else:
+        print("Calculando en modo no confocal")
         # Calcular las distancias voxel-pared para todas las imágenes y alturas
         r3 = dr.norm(voxelesR - wallPoints)
         r2 = dr.norm(voxeles - BPparams.laserWallPos)
@@ -83,8 +86,10 @@ def sumTransientIntensitiesForOptim(voxeles: Array3f, wallPoints: Array3f, r4: F
     else:
         r1 = BPparams.r1
 
-    x = Int((times + r1 + r4) / BPparams.t_delta)
+    x = Int(((times + r1 + r4) - BPparams.t0) / BPparams.t_delta)
     x = dr.clip(x, 0, BPparams.width - 1)
+
+    print(x)
 
     alturas = dr.tile(alturas, numVoxeles)
  
@@ -118,17 +123,16 @@ def generate_voxel_coordinates(volume_position, volume_size, resolution):
                 fx = volume_position[0] + (x * voxel_size) + half_voxel_size
                 fy = volume_position[1] + (y * voxel_size) + half_voxel_size
                 fz = volume_position[2] + (z * voxel_size) + half_voxel_size
-                
+
                 voxels[i] = np.array([fx, fy, fz])
                 i += 1
     
     # print(f"Voxeles generados y centrados")
     return Array3f(voxels)
 
-def backprojectionHDF5(params: TransientVoxelizationParams):
+def backprojectionHDF5(params: TransientVoxelizationParams, BPparams: BackProjectionParams):
     # Backprojection a partir de un dataset HDF5
     print(f"Empezando el proceso de backprojection para el dataset {params.dataset}")
-    BPparams = parseHDF5(params.dataset)
 
     resolution = params.VOXEL_RESOLUTION
     numVoxeles = resolution * resolution * resolution

@@ -39,6 +39,7 @@ class TransientVoxelizationParams:
         self.manual = False
         self.dataset = "dataset/Z.hdf5"
         self.verbose = False
+        self.scaleDownTo = None
 
     def setOrthoSize(self, size):
         self.ORTHO_SIZEX = self.ORTHO_SIZEY = self.ORTHO_SIZEZ = size

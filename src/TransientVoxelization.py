@@ -33,6 +33,7 @@ def parseArgsIntoParams(params):
     parser.add_argument("-manual", help="Entrada de datos manual")
     parser.add_argument("-dataset", type=str, help="Ruta del dataset")
     parser.add_argument("-verbose", type=str, help="Mostrar información detallada")
+    parser.add_argument("-scaleDownTo", type=int, help="Escala de los datos de entrada")
     parsed_args = parser.parse_args()
 
     # Parametros necesarios en modo manual y dataset
@@ -45,6 +46,8 @@ def parseArgsIntoParams(params):
             params.verbose = True
         else:
             params.verbose = False
+    if parsed_args.scaleDownTo is not None:
+        params.scaleDownTo = parsed_args.scaleDownTo
     if parsed_args.manual is not None:
         # Modo manual
         params.manual = True

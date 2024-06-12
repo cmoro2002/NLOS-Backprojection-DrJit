@@ -12,7 +12,7 @@ from drjit.llvm import Array3f, Float, TensorXf, Int
 def reorganize_coords(coords):
     return coords[:, [0, 2, 1]] if coords.ndim == 2 else np.array([coords[0], coords[2], coords[1]])
 
-def parseHDF5(dataset) -> BackProjectionParams:
+def parseHDF5(dataset, scaleDownTo) -> BackProjectionParams:
     # Leer el dataset
     f = h5py.File(dataset, 'r')
     confocal = np.array(f["isConfocal"]).item()
@@ -23,9 +23,20 @@ def parseHDF5(dataset) -> BackProjectionParams:
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.sum(data, axis=2)
     data = np.squeeze(data.mean(axis=(0))) # (4048, 256, 256)
+    print(f"Data shape = {data.shape}")
+
+    if scaleDownTo != None:
+        print(f"Data shape primero = {data.shape}")
+        data = downsample_matrix(data, scaleDownTo)
+        print(f"Data shape Segundo = {data.shape}")
     
     # transposed_data = data.transpose(2, 1, 0)
     transposed_data = data.transpose(1, 2, 0)
+
+    print("Transposed data shape = ", transposed_data.shape)
+
+    # print(f"Data shape = {transposed_data.shape}")
+    # input()
 
     width = transposed_data.shape[2]
     height = transposed_data.shape[1]
@@ -38,6 +49,7 @@ def parseHDF5(dataset) -> BackProjectionParams:
         tensor = Tensor2f(tensorAux.array, (height, width))
         dr.scatter(datos, tensor.data, dr.arange(Int, i * height * width, (i + 1) * height * width)) 
 
+    print(f"datos = {datos}")
     # print(f"Datos de las imágenes almacenados")
     # Aplanar el array a una dimensión, guardarlo en results
     # results = Float(transposed_data.reshape(-1))
@@ -75,6 +87,8 @@ def parseHDF5(dataset) -> BackProjectionParams:
 
 
     hiddenVolumePosition = np.array(f["hiddenVolumePosition"]).flatten()
+    size = np.array(f["hiddenVolumeSize"])
+    print(size)
     hiddenVolumeSize = np.array(f["hiddenVolumeSize"]).item()
 
     # Ajustar correctamente el volume position para que este arriba a la izquierda y luego calcular hasta size * 2
@@ -89,5 +103,25 @@ def parseHDF5(dataset) -> BackProjectionParams:
     print(res.to_string())
     return res
 
+def downsample_matrix(matrix, scaleDownTo):
+    """
+    Realiza el downsampling de una matriz utilizando el promedio de bloques.
+    
+    Args:
+    matrix (np.ndarray): La matriz original de tamaño (4048, 256, 256).
+    scaleDownTo (int): La nueva dimensión para las dos últimas dimensiones (deben ser divisibles por 256).
+    
+    Returns:
+    np.ndarray: La matriz después del downsampling con tamaño (4048, scaleDownTo, scaleDownTo).
+    """
+    # Verificar que las dimensiones originales sean divisibles por la nueva dimensión
+    assert matrix.shape[1] % scaleDownTo == 0, "La dimensión original debe ser divisible por scaleDownTo."
+    assert matrix.shape[2] % scaleDownTo == 0, "La dimensión original debe ser divisible por scaleDownTo."
 
+    # Calcular el factor de escala
+    scale_factor = matrix.shape[1] // scaleDownTo
 
+    # Realizar el downsampling usando el promedio de bloques
+    downsampled_matrix = matrix.reshape((matrix.shape[0], scaleDownTo, scale_factor, scaleDownTo, scale_factor)).mean(axis=(2, 4))
+
+    return downsampled_matrix

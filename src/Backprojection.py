@@ -159,7 +159,8 @@ def almacenarResultados( intensidades: Float, resolution: int):
 def backprojection(params: TransientVoxelizationParams):
     if (not params.manual):
         # Backprojection a partir de un dataset HDF5
-        backprojectionHDF5(params)
+        BPparams = parseHDF5(params.dataset, params.scaleDownTo)
+        backprojectionHDF5(params, BPparams)
     else:
 
         # Crear una instancia de TransientImage
