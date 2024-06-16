@@ -160,9 +160,10 @@ cython_debug/
 #.idea/
 
 
-src/results/*
 FastBackprojection-1.0.3
 FastBackprojectionEjecutables
 results/*
 datasets/*
 src/letter_ht_90/*
+times/*.txt
+times/*.png

@@ -23,6 +23,7 @@ def parseHDF5(dataset, scaleDownTo) -> BackProjectionParams:
     # Compute the mean across dimensions 1 (index 0) and 3 (index 2)
     data = np.sum(data, axis=2)
     data = np.squeeze(data.mean(axis=(0))) # (4048, 256, 256)
+    # data = np.squeeze(data) # (4048, 256, 256)
     print(f"Data shape = {data.shape}")
 
     if scaleDownTo != None:
@@ -90,6 +91,7 @@ def parseHDF5(dataset, scaleDownTo) -> BackProjectionParams:
     size = np.array(f["hiddenVolumeSize"])
     print(size)
     hiddenVolumeSize = np.array(f["hiddenVolumeSize"]).item()
+    # hiddenVolumeSize = 0.81
 
     # Ajustar correctamente el volume position para que este arriba a la izquierda y luego calcular hasta size * 2
     hiddenVolumePosition[0] -= (hiddenVolumeSize / 2)
